@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
-    <title>Gridea</title>
-    <updated>2021-02-24T11:55:29.407Z</updated>
+    <title>F4DE的破站</title>
+    <updated>2021-02-24T13:07:12.796Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -10,7 +10,7 @@
 助君出重围</subtitle>
     <logo>https://f4de-bak.github.io/images/avatar.png</logo>
     <icon>https://f4de-bak.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2021, Gridea</rights>
+    <rights>All rights reserved 2021, F4DE的破站</rights>
     <entry>
         <title type="html"><![CDATA[Hello Gridea]]></title>
         <id>https://f4de-bak.github.io/post/hello-gridea/</id>
