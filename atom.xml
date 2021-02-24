@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
     <title>F4DE的博客</title>
-    <updated>2021-02-24T13:23:55.126Z</updated>
+    <updated>2021-02-24T13:36:35.562Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -17,8 +17,11 @@
         <link href="https://f4de-bak.github.io/post/bo-ke-chong-jian/">
         </link>
         <updated>2021-02-24T13:08:28.000Z</updated>
-        <content type="html"><![CDATA[<p><a href="https://www.f4de.ink/">原博客</a>，在格硬盘的时候本地文件误删，索性直接重建一个。<br>
-2021，新的起点✨。</p>
+        <summary type="html"><![CDATA[<p><a href="https://www.f4de.ink/">原博客</a>，在格硬盘的时候本地文件误删，索性直接重建一个。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p><a href="https://www.f4de.ink/">原博客</a>，在格硬盘的时候本地文件误删，索性直接重建一个。</p>
+<!-- more -->
+<p>2021，新的起点✨。</p>
 ]]></content>
     </entry>
     <entry>
