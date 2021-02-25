@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
     <title>F4DE的博客</title>
-    <updated>2021-02-25T07:55:08.696Z</updated>
+    <updated>2021-02-25T08:41:26.761Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -153,7 +153,7 @@ Process finished with exit code 0
 <p>一个流可以通过<code>Collections</code>、<code>Lists</code>、<code>Sets</code>、<code>ints</code>、<code>longs</code>、<code>doubles</code>、<code>arrays</code>、<code>lines of file</code>创建出来。</p>
 <h3 id="intermediate-operation">Intermediate operation</h3>
 <p>intermediate ooperation（中间操作）：一个流后面可以串联一个或多个中间操作。中间操作可以打开流，对流中的数据进行过滤、映射等，并返回一个新的流供之后操作实用。</p>
-<h3 id="map">map</h3>
+<h4 id="map">map</h4>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
 
@@ -199,7 +199,7 @@ Process finished with exit code 0
 
 </code></pre>
 <p>对于这个例子来说，T就是<code>Integer</code>，R就是<code>String</code>。</p>
-<h3 id="filter">filter</h3>
+<h4 id="filter">filter</h4>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
 
@@ -233,7 +233,7 @@ ankit
 Process finished with exit code 0
 
 </code></pre>
-<h3 id="distinct">distinct</h3>
+<h4 id="distinct">distinct</h4>
 <p>对于流中的元素进行去重，不需要先把其转换为<code>Set</code>，只需要实用<code>distinct</code>中间操作即可：</p>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
@@ -254,7 +254,7 @@ Process finished with exit code 0
 </code></pre>
 <h3 id="ternimal-operations">Ternimal operations</h3>
 <p>Ternimal operations（终端操作）：终端操作是流的链式调用的最后一步，被终端操作处理过的流就会变成其他的Java对象。在一个流的链式调用流程中，终端操作只会被调用一次，调用之后流就会关闭。</p>
-<h3 id="foreach">forEach</h3>
+<h4 id="foreach">forEach</h4>
 <p><code>forEach</code>是最常用的一个终端操作，它的参数是一个<code>Consumer</code>函数接口（一元），对流中的每一个元素执行相同的操作，最常见的就是打印流中的每个元素：</p>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
@@ -270,7 +270,7 @@ Process finished with exit code 0
 6
 
 </code></pre>
-<h3 id="reduce">reduce</h3>
+<h4 id="reduce">reduce</h4>
 <p>reduce（聚合）操作可以通过聚合函数把流中的元素聚合成一个结果。</p>
 <p>reduce方法传入的是一个<code>BinaryOperator</code>接口对象，它的<code>apply</code>方法是一个二元抽象方法，会把传入的两个参数进行运算，并返回运算的结果：</p>
 <pre><code class="language-java">T apply(T t, T u);

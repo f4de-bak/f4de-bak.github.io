@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>F4DE的博客</title>
 <meta name="description" content="Keep fantasy" />
-<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1614239532528">
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1614240923225">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
@@ -23,7 +23,7 @@
       <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
         <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
         <a href="https://f4de-bak.github.io">
-          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1614239532528" alt="">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1614240923225" alt="">
         </a>
         <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
       </div>
@@ -46,13 +46,19 @@
 <li><a href="#stream">Stream</a>
 <ul>
 <li><a href="#steam%E4%BB%8B%E7%BB%8D">Steam介绍</a></li>
-<li><a href="#intermediate-operation">Intermediate operation</a></li>
+<li><a href="#intermediate-operation">Intermediate operation</a>
+<ul>
 <li><a href="#map">map</a></li>
 <li><a href="#filter">filter</a></li>
 <li><a href="#distinct">distinct</a></li>
-<li><a href="#ternimal-operations">Ternimal operations</a></li>
+</ul>
+</li>
+<li><a href="#ternimal-operations">Ternimal operations</a>
+<ul>
 <li><a href="#foreach">forEach</a></li>
 <li><a href="#reduce">reduce</a></li>
+</ul>
+</li>
 <li><a href="#other-features">Other features</a></li>
 </ul>
 </li>
@@ -253,7 +259,7 @@ Process finished with exit code 0
 <p>一个流可以通过<code>Collections</code>、<code>Lists</code>、<code>Sets</code>、<code>ints</code>、<code>longs</code>、<code>doubles</code>、<code>arrays</code>、<code>lines of file</code>创建出来。</p>
 <h3 id="intermediate-operation">Intermediate operation</h3>
 <p>intermediate ooperation（中间操作）：一个流后面可以串联一个或多个中间操作。中间操作可以打开流，对流中的数据进行过滤、映射等，并返回一个新的流供之后操作实用。</p>
-<h3 id="map">map</h3>
+<h4 id="map">map</h4>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
 
@@ -299,7 +305,7 @@ Process finished with exit code 0
 
 </code></pre>
 <p>对于这个例子来说，T就是<code>Integer</code>，R就是<code>String</code>。</p>
-<h3 id="filter">filter</h3>
+<h4 id="filter">filter</h4>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
 
@@ -333,7 +339,7 @@ ankit
 Process finished with exit code 0
 
 </code></pre>
-<h3 id="distinct">distinct</h3>
+<h4 id="distinct">distinct</h4>
 <p>对于流中的元素进行去重，不需要先把其转换为<code>Set</code>，只需要实用<code>distinct</code>中间操作即可：</p>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
@@ -354,7 +360,7 @@ Process finished with exit code 0
 </code></pre>
 <h3 id="ternimal-operations">Ternimal operations</h3>
 <p>Ternimal operations（终端操作）：终端操作是流的链式调用的最后一步，被终端操作处理过的流就会变成其他的Java对象。在一个流的链式调用流程中，终端操作只会被调用一次，调用之后流就会关闭。</p>
-<h3 id="foreach">forEach</h3>
+<h4 id="foreach">forEach</h4>
 <p><code>forEach</code>是最常用的一个终端操作，它的参数是一个<code>Consumer</code>函数接口（一元），对流中的每一个元素执行相同的操作，最常见的就是打印流中的每个元素：</p>
 <pre><code class="language-java">public class Demo1 {
     public static void main(String[] args) {
@@ -370,7 +376,7 @@ Process finished with exit code 0
 6
 
 </code></pre>
-<h3 id="reduce">reduce</h3>
+<h4 id="reduce">reduce</h4>
 <p>reduce（聚合）操作可以通过聚合函数把流中的元素聚合成一个结果。</p>
 <p>reduce方法传入的是一个<code>BinaryOperator</code>接口对象，它的<code>apply</code>方法是一个二元抽象方法，会把传入的两个参数进行运算，并返回运算的结果：</p>
 <pre><code class="language-java">T apply(T t, T u);
