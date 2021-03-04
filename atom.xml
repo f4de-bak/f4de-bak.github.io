@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
     <title>F4DE的博客</title>
-    <updated>2021-03-04T09:27:34.488Z</updated>
+    <updated>2021-03-04T15:13:02.774Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -16,9 +16,9 @@
         <link href="https://f4de-bak.github.io/post/java-zi-jie-ma-wen-jian-jie-gou/">
         </link>
         <updated>2021-03-04T08:57:34.000Z</updated>
-        <summary type="html"><![CDATA[<p>关于Java字节码文件结构的学习笔记。</p>
+        <summary type="html"><![CDATA[<p>一篇关于Java字节码文件结构的学习笔记。</p>
 ]]></summary>
-        <content type="html"><![CDATA[<p>关于Java字节码文件结构的学习笔记。</p>
+        <content type="html"><![CDATA[<p>一篇关于Java字节码文件结构的学习笔记。</p>
 <!-- more -->
 <p><a href="https://docs.oracle.com/javase/specs/jvms/se15/html/jvms-4.html#jvms-4.7.2">Chapter 4. The class File Format (oracle.com)</a></p>
 <p>Java的字节码文件格式规定如下：</p>
