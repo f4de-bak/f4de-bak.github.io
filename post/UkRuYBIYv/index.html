@@ -1,0 +1,515 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>F4DE的博客</title>
+<meta name="description" content="Keep fantasy" />
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1615380568406">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://f4de-bak.github.io/styles/main.css">
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://f4de-bak.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1615380568406" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li><a href="#start">start</a></li>
+<li><a href="#api">API</a></li>
+<li><a href="#usage">usage</a>
+<ul>
+<li><a href="#%E8%AF%BB%E5%8F%96%E7%B1%BB-%E6%96%B9%E6%B3%95-%E6%88%90%E5%91%98%E5%8F%98%E9%87%8F%E4%BF%A1%E6%81%AF">读取类、方法、成员变量信息</a></li>
+<li><a href="#%E4%BF%AE%E6%94%B9%E7%B1%BB%E7%9A%84%E6%96%B9%E6%B3%95">修改类的方法</a></li>
+<li><a href="#%E5%8A%A8%E6%80%81%E7%94%9F%E6%88%90%E7%B1%BB">动态生成类</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="ri-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.2s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.4s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+      
+        <a href="/post/links" class="menu" style="animation-delay: 0.8s">
+          友链
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a></div>
+    <a class="rss" href="https://f4de-bak.github.io/atom.xml" target="_blank">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-bold lg:mt-16">Javassist学习</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2021-03-10 / 6 min read
+        </div>
+        
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210310204848.jpg" alt="">
+        
+        <div class="post-content yue">
+          <p>关于 Javassist 的学习笔记。</p>
+<!-- more -->
+<h1 id="start">start</h1>
+<p><em><strong>javassist</strong></em> 是一个分析、编辑、创建Java字节码的类库，与 <em><strong>ASM</strong></em> 相比提供了更加方便的API，无需再去关注底层的栈操作和字节码。</p>
+<p>依赖导入：</p>
+<pre><code class="language-xml">    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.javassist&lt;/groupId&gt;
+            &lt;artifactId&gt;javassist&lt;/artifactId&gt;
+            &lt;version&gt;3.27.0-GA&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+</code></pre>
+<h1 id="api">API</h1>
+<table>
+<thead>
+<tr>
+<th>类</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ClassPool</td>
+<td>ClassPool是一个存储CtClass的容器，如果调用<code>get</code>方法会搜索并创建一个表示该类的CtClass对象</td>
+</tr>
+<tr>
+<td>CtClass</td>
+<td>CtClass表示的是从ClassPool获取的类对象，可对该类就行读写编辑等操作</td>
+</tr>
+<tr>
+<td>CtMethod</td>
+<td>可读写的类方法对象</td>
+</tr>
+<tr>
+<td>CtConstructor</td>
+<td>可读写的类构造方法对象</td>
+</tr>
+<tr>
+<td>CtField</td>
+<td>可读写的类成员变量对象</td>
+</tr>
+</tbody>
+</table>
+<p><em><strong>javassist</strong></em> 提供的API和反射非常类似，基本可以对应反射中的<code>Class</code>、<code>Method</code>、<code>Constructor</code>、<code>Field</code>。</p>
+<p>此外 <em><strong>javassist</strong></em> 还提供了一些内置的标识符来表示一些特定的含义：</p>
+<table>
+<thead>
+<tr>
+<th>表达式</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$0, $1, $2, ...</code></td>
+<td><code>this</code>和方法参数</td>
+</tr>
+<tr>
+<td><code>$args</code></td>
+<td><code>Object[]</code>类型的参数数组</td>
+</tr>
+<tr>
+<td><code>$$</code></td>
+<td>所有的参数，如<code>m($$)</code>等价于<code>m($1,$2,...)</code></td>
+</tr>
+<tr>
+<td><code>$cflow(...)</code></td>
+<td>cflow变量</td>
+</tr>
+<tr>
+<td><code>$r</code></td>
+<td>返回类型，用于类型转换</td>
+</tr>
+<tr>
+<td><code>$w</code></td>
+<td>包装类型，用于类型转换</td>
+</tr>
+<tr>
+<td><code>$_</code></td>
+<td>方法返回值</td>
+</tr>
+<tr>
+<td><code>$sig</code></td>
+<td>方法签名，返回<code>java.lang.Class[]</code>数组类型</td>
+</tr>
+<tr>
+<td><code>$type</code></td>
+<td>返回值类型，<code>java.lang.Class</code>类型</td>
+</tr>
+<tr>
+<td><code>$class</code></td>
+<td>当前类，<code>java.lang.Class</code>类型</td>
+</tr>
+</tbody>
+</table>
+<h1 id="usage">usage</h1>
+<p>相比于基于访问者模式的 <em><strong>ASM</strong></em> 框架来说，使用 <em><strong>javassist</strong></em> 来操作字节码是非常简单的。</p>
+<h2 id="读取类-方法-成员变量信息">读取类、方法、成员变量信息</h2>
+<p>通过 <code>ClassPool</code> 来获取 <code>CtClass</code>对象之后，基本就和反射一样来读取类的信息。</p>
+<pre><code class="language-java">package src;
+
+public class TestClass {
+    private String name;
+
+    public TestClass() {
+    }
+
+    public TestClass(String name) {
+        this.name = name;
+    }
+
+    public String getId() {
+        return name;
+    }
+
+    public void setId(String name) {
+        this.name = name;
+    }
+
+    public void hello() {
+        System.out.println(&quot;Hello &quot; + this.name);
+    }
+}
+</code></pre>
+<pre><code class="language-java">package src;
+
+
+import javassist.*;
+
+import java.util.Arrays;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        ClassPool classPool = ClassPool.getDefault();
+        CtClass ctClass = classPool.getCtClass(TestClass.class.getName());
+        // 获取成员变量
+        CtField[] fields = ctClass.getDeclaredFields();
+        // 获取方法
+        CtMethod[] methods = ctClass.getDeclaredMethods();
+        // 获取构造方法
+        CtConstructor[] constructors = ctClass.getDeclaredConstructors();
+        // 输出信息
+        System.out.println(&quot;------fields------&quot;);
+        Arrays.stream(fields).forEach(System.out::println);
+        System.out.println(&quot;------methods------&quot;);
+        Arrays.stream(methods).forEach(System.out::println);
+        System.out.println(&quot;------constructors------&quot;);
+        Arrays.stream(constructors).forEach(System.out::println);
+    }
+}
+</code></pre>
+<pre><code class="language-java">// output
+
+------fields------
+src.TestClass.name:Ljava/lang/String;
+------methods------
+javassist.CtMethod@fb809fd2[public getId ()Ljava/lang/String;]
+javassist.CtMethod@db3679d4[public setId (Ljava/lang/String;)V]
+javassist.CtMethod@30063153[public hello ()V]
+------constructors------
+javassist.CtConstructor@46d56d67[public TestClass ()V]
+javassist.CtConstructor@d8355a8[public TestClass (Ljava/lang/String;)V]
+</code></pre>
+<h2 id="修改类的方法">修改类的方法</h2>
+<p>通过调用 <code>CtMethods</code> 的一些方法就可以进行方法逻辑的修改：</p>
+<ul>
+<li><em><strong>setModifiers</strong></em>：修改方法的修饰符</li>
+<li><em><strong>insertBefore</strong></em>：在方法执行前插入代码</li>
+<li><em><strong>insertAfter</strong></em>：方法执行后插入代码</li>
+<li><em><strong>setBody</strong></em>：修改整段方法的代码</li>
+<li>······</li>
+</ul>
+<pre><code class="language-java">package src;
+
+
+import javassist.*;
+
+import java.io.File;
+import java.io.FileOutputStream;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        ClassPool classPool = ClassPool.getDefault();
+        CtClass ctClass = classPool.getCtClass(TestClass.class.getName());
+        // 获取 hello 方法
+        CtMethod hello = ctClass.getDeclaredMethod(&quot;hello&quot;, null);
+        // 修改方法的修饰符
+        hello.setModifiers(Modifier.PRIVATE);
+        // 实现简单AOP
+        hello.insertBefore(&quot;System.out.println(\&quot;func start\&quot;);&quot;);
+        hello.insertAfter(&quot;System.out.println(\&quot;func over\&quot;);&quot;);
+        // 写入class文件
+        byte[] bytecode = ctClass.toBytecode();
+        File file = new File(&quot;target/classes/src/TestClass.class&quot;);
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(bytecode);
+        fos.flush();
+        fos.close();
+    }
+}
+</code></pre>
+<p>修改后的字节码：</p>
+<pre><code class="language-java">//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by FernFlower decompiler)
+//
+
+package src;
+
+public class TestClass {
+    private String name;
+
+    public TestClass() {
+    }
+
+    public TestClass(String name) {
+        this.name = name;
+    }
+
+    public String getId() {
+        return this.name;
+    }
+
+    public void setId(String name) {
+        this.name = name;
+    }
+
+    private void hello() {
+        System.out.println(&quot;func start&quot;);
+        System.out.println(&quot;Hello &quot; + this.name);
+        Object var2 = null;
+        System.out.println(&quot;func over&quot;);
+    }
+}
+</code></pre>
+<p>修改成员变量信息方法上大体差不多。</p>
+<h2 id="动态生成类">动态生成类</h2>
+<p>使用<code>CtClass</code>的<code>makeClass</code>方法就可以动态生成一个类。</p>
+<pre><code class="language-java">package src;
+
+
+import javassist.*;
+
+import java.io.File;
+import java.io.FileOutputStream;
+
+public class Main {
+    public static void main(String[] args) {
+        ClassPool classPool = ClassPool.getDefault();
+        CtClass ctClass = classPool.makeClass(&quot;src.ClassMade&quot;);
+        try {
+            // 加入静态代码块
+            ctClass.makeClassInitializer().insertBefore(&quot;java.lang.System.out.println(\&quot;static code block\&quot;);&quot;);
+
+            // 创建成员变量
+            CtField id = CtField.make(&quot;private static int id = 3;&quot;, ctClass);
+            ctClass.addField(id);
+
+            // 创建方法
+            CtMethod main = CtMethod.make(
+                    &quot;public static void main(String[] args) {java.lang.System.out.println(id);}&quot;,
+                    ctClass
+            );
+            ctClass.addMethod(main);
+
+            // 写入class文件
+            byte[] bytecode = ctClass.toBytecode();
+            File file = new File(&quot;target/classes/src/ClassMade.class&quot;);
+            if (!(file.exists())) {
+                file.createNewFile();
+            }
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(bytecode);
+            fos.flush();
+            fos.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<p>如果要使用这个类的话，需要向 <em><strong>JVM</strong></em> 中动态注册，这个就是类加载中的内容了。</p>
+
+        </div>
+
+        
+
+
+        <div class="flex justify-between py-8">
+          
+
+          
+            <div class="next-post">
+              <a href="https://f4de-bak.github.io/post/java-zi-jie-ma-wen-jian-jie-gou/">
+                <h3 class="post-title">
+                  Java字节码文件结构
+                  <i class="ri-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+
+      </div>
+    </div>
+
+    <script src="https://f4de-bak.github.io/media/prism.js"></script>  
+<script>
+
+Prism.highlightAll()
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>
