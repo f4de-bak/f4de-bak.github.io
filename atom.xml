@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>http://localhost:4000</id>
     <title>F4DE的博客</title>
-    <updated>2021-03-15T14:23:30.460Z</updated>
+    <updated>2021-03-15T14:25:19.375Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="http://localhost:4000"/>
     <link rel="self" href="http://localhost:4000/atom.xml"/>
@@ -10,15 +10,6 @@
     <logo>http://localhost:4000/images/avatar.png</logo>
     <icon>http://localhost:4000/favicon.ico</icon>
     <rights>All rights reserved 2021, F4DE的博客</rights>
-    <entry>
-        <title type="html"><![CDATA[test]]></title>
-        <id>http://localhost:4000/post/kE5517iuP/</id>
-        <link href="http://localhost:4000/post/kE5517iuP/">
-        </link>
-        <updated>2021-03-15T14:22:42.000Z</updated>
-        <content type="html"><![CDATA[<p>123</p>
-]]></content>
-    </entry>
     <entry>
         <title type="html"><![CDATA[Javassist学习]]></title>
         <id>http://localhost:4000/post/UkRuYBIYv/</id>
