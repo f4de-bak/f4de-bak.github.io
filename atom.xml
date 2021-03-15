@@ -1,19 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://f4de-bak.github.io</id>
+    <id>http://localhost:4000</id>
     <title>F4DE的博客</title>
-    <updated>2021-03-15T14:06:27.361Z</updated>
+    <updated>2021-03-15T14:23:30.460Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://f4de-bak.github.io"/>
-    <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
+    <link rel="alternate" href="http://localhost:4000"/>
+    <link rel="self" href="http://localhost:4000/atom.xml"/>
     <subtitle>Keep fantasy</subtitle>
-    <logo>https://f4de-bak.github.io/images/avatar.png</logo>
-    <icon>https://f4de-bak.github.io/favicon.ico</icon>
+    <logo>http://localhost:4000/images/avatar.png</logo>
+    <icon>http://localhost:4000/favicon.ico</icon>
     <rights>All rights reserved 2021, F4DE的博客</rights>
     <entry>
+        <title type="html"><![CDATA[test]]></title>
+        <id>http://localhost:4000/post/kE5517iuP/</id>
+        <link href="http://localhost:4000/post/kE5517iuP/">
+        </link>
+        <updated>2021-03-15T14:22:42.000Z</updated>
+        <content type="html"><![CDATA[<p>123</p>
+]]></content>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[Javassist学习]]></title>
-        <id>https://f4de-bak.github.io/post/UkRuYBIYv/</id>
-        <link href="https://f4de-bak.github.io/post/UkRuYBIYv/">
+        <id>http://localhost:4000/post/UkRuYBIYv/</id>
+        <link href="http://localhost:4000/post/UkRuYBIYv/">
         </link>
         <updated>2021-03-10T12:45:54.000Z</updated>
         <summary type="html"><![CDATA[<p>关于 Javassist 的学习笔记。</p>
@@ -306,8 +315,8 @@ public class Main {
     </entry>
     <entry>
         <title type="html"><![CDATA[Java字节码文件结构]]></title>
-        <id>https://f4de-bak.github.io/post/java-zi-jie-ma-wen-jian-jie-gou/</id>
-        <link href="https://f4de-bak.github.io/post/java-zi-jie-ma-wen-jian-jie-gou/">
+        <id>http://localhost:4000/post/java-zi-jie-ma-wen-jian-jie-gou/</id>
+        <link href="http://localhost:4000/post/java-zi-jie-ma-wen-jian-jie-gou/">
         </link>
         <updated>2021-03-04T08:57:34.000Z</updated>
         <summary type="html"><![CDATA[<p>一篇关于Java字节码文件结构的学习笔记。</p>
@@ -891,8 +900,8 @@ public class TestClass implements TestInterface {
     </entry>
     <entry>
         <title type="html"><![CDATA[Java8的新特性-Stream]]></title>
-        <id>https://f4de-bak.github.io/post/java8-de-xin-te-xing-stream/</id>
-        <link href="https://f4de-bak.github.io/post/java8-de-xin-te-xing-stream/">
+        <id>http://localhost:4000/post/java8-de-xin-te-xing-stream/</id>
+        <link href="http://localhost:4000/post/java8-de-xin-te-xing-stream/">
         </link>
         <updated>2021-02-25T07:44:07.000Z</updated>
         <summary type="html"><![CDATA[<p>流（stream）是Java8中的一个重要特性，利用匿名函数和流可以极大简化一些繁琐的操作。</p>
@@ -1338,8 +1347,8 @@ Exception in thread &quot;main&quot; java.lang.IllegalStateException: stream has
     </entry>
     <entry>
         <title type="html"><![CDATA[博客重建]]></title>
-        <id>https://f4de-bak.github.io/post/bo-ke-chong-jian/</id>
-        <link href="https://f4de-bak.github.io/post/bo-ke-chong-jian/">
+        <id>http://localhost:4000/post/bo-ke-chong-jian/</id>
+        <link href="http://localhost:4000/post/bo-ke-chong-jian/">
         </link>
         <updated>2021-02-24T13:08:28.000Z</updated>
         <summary type="html"><![CDATA[<p><a href="https://www.f4de.ink/">原博客</a>的本地文件在格硬盘的时候误删，索性直接重建一个。</p>
