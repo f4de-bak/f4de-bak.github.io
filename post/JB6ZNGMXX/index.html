@@ -1,0 +1,512 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>F4DE的博客</title>
+<meta name="description" content="Keep fantasy" />
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1615863602495">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://f4de-bak.github.io/styles/main.css">
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://f4de-bak.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1615863602495" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li><a href="#%E7%AE%80%E4%BB%8B">简介</a></li>
+<li><a href="#tomcat%E6%9E%B6%E6%9E%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90">Tomcat架构简单分析</a></li>
+<li><a href="#ajp%E6%95%B0%E6%8D%AE%E5%8C%85%E5%A4%84%E7%90%86">AJP数据包处理</a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0">漏洞复现</a>
+<ul>
+<li><a href="#%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA">环境搭建</a></li>
+<li><a href="#%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96">文件读取</a></li>
+<li><a href="#jsp%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB">JSP文件包含</a></li>
+</ul>
+</li>
+<li><a href="#%E5%85%B6%E4%BB%96">其他</a>
+<ul>
+<li><a href="#%E8%AF%BB%E5%8F%96%E5%85%B6%E4%BB%96context">读取其他Context</a></li>
+<li><a href="#%E7%9B%AE%E5%BD%95%E7%A9%BF%E8%B6%8A%E5%8F%AF%E8%AF%BB%E6%80%A7">目录穿越可读性</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BF%AE%E5%A4%8D">修复</a></li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="ri-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.2s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.4s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+      
+        <a href="/post/links" class="menu" style="animation-delay: 0.8s">
+          友链
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a></div>
+    <a class="rss" href="https://f4de-bak.github.io/atom.xml" target="_blank">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-bold lg:mt-16">Tomcat AJP协议漏洞复现</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2021-03-16 / 12 min read
+        </div>
+        
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105512.jpg" alt="">
+        
+        <div class="post-content yue">
+          <p>CVE-2020-1938复现，漏洞利用难度不大，但是还是学到了很多新的东西。</p>
+<!-- more -->
+<h1 id="简介">简介</h1>
+<p>AJP协议是一种定向包协议，采用二进制形式代替文本形式，主要是为了提高性能和添加SSL的支持，在tomcat中使用的是AJP1.3，简称为ajp13。</p>
+<p>在tomcat的配置文件<code>server.xml</code>中配置了两种连接方式：</p>
+<figure data-type="image" tabindex="1"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315141928.png" alt="image-20210315141921787" loading="lazy"></figure>
+<figure data-type="image" tabindex="2"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315141933.png" alt="image-20210315141933682" loading="lazy"></figure>
+<p>一个是默认开放在8080端口的HTTP Connector，另一个则是默认开放在8009端口的AJP Connertor，而在tomcat中这个协议的监听一直是默认开启的。</p>
+<p>tomcat可以通过AJP协议和另一个web容器进行交互通信，比如Apache。tomcat可以作为Servlet或者JSP的容器，但是在处理一些静态资源的速度却不如其他的HTTP服务器（如IIS、Apache）。所以实际应用中常常把tomcat和其他服务器进行集成，对于不支持Servlet、JSP的服务器，可以通过AJP协议把请求转发给tomcat，从而实现优势互补。</p>
+<p>正常情况下用户使用客户端通过HTTP协议来和tomcat服务器进行通信，但是也可以通过AJP协议来和tomcat通信，这时候就会由AJP Connertor来处理AJP请求。<strong>显然浏览器不直接支持AJP协议，所以要想使用AJP协议，要么通过中间代理服务器进行转发，要么自己根据AJP协议的格式来实现一个客户端。</strong></p>
+<figure data-type="image" tabindex="3"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315142847.jpeg" alt="解析Tomcat HTTP协议与AJP协议解析Tomcat HTTP协议与AJP协议" loading="lazy"></figure>
+<p>但是Tomcat AJP协议存在安全漏洞（CVE-2020-1938），攻击者可以通过构造AJP协议请求中的特定属性值，来进行任意文件读取(一般为webapp/ROOT路径下)，同时如果AJP服务器存在文件上传接口，则还可能通过漏洞进行文件包含，实现远程代码执行。</p>
+<p>漏洞影响范围：</p>
+<ul>
+<li>Tomcat 6.x</li>
+<li>Tomcat 7.x &lt; 7.0.100</li>
+<li>Tomcat 8.x &lt; 8.5.51</li>
+<li>Tomcat 9.x &lt; 9.0.31</li>
+</ul>
+<h1 id="tomcat架构简单分析">Tomcat架构简单分析</h1>
+<p>Tomcat架构分析：https://blog.csdn.net/xlgen157387/article/details/79006434</p>
+<p>Tomcat Service主要包含两个部分：<strong>Connector</strong>和<strong>Container</strong>。</p>
+<ul>
+<li><em>Connector</em>主要用于处理连接，并提供socket和request及response直接的转化。</li>
+<li><em>Container</em>用于封装和管理Servlet，处理具体的请求。</li>
+</ul>
+<p>在<em>Container</em>中有四个子容器：</p>
+<ul>
+<li><em>Engine</em>：引擎，用来管理多个站点，一个service最多只能有一个Engine。</li>
+<li><em>Host</em>：代表一个站点，也叫虚拟主机，通过配置Host可以添加站点。</li>
+<li><em>Context</em>：代表一个应用程序，对应一套程序，或者一个WEB-INF目录以及目录中的web.xml文件。</li>
+<li><em>Wrapper</em>：每一个Wrapper封装着一个Servlet。</li>
+</ul>
+<p>以下面的tomcat文件目录做对照：</p>
+<figure data-type="image" tabindex="4"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315160205.png" alt="image-20210315160205337" loading="lazy"></figure>
+<p><em>Webapps</em>目录代表一个Host，而其下的每个目录都对应着一个Context，其中ROOT目录存放着主应用，其他目录存放着子应用。当我们访问Context的时候，如果是ROOT目录下的，则可以直接通过<code>www.xxx.com/</code>来访问，而如果要访问其他子目录，则需要通过<code>www.xxx.com/docs</code>来访问。当然，主应用目录是可以修改的，默认情况下为ROOT目录。</p>
+<p>Tomcat处理一个请求的流程大致如下：</p>
+<figure data-type="image" tabindex="5"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315145747.png" alt="image-20201013113437489" loading="lazy"></figure>
+<ol>
+<li>在获取到TCP/IP数据包的时候，会交给Processor将解析，并封装成我们熟悉的request和response对象，然后传递给下一步处理。</li>
+<li>Engine来进行Host、Context、Mapping中Servlet的匹配。</li>
+<li>Servlet中调用方法（service、doGet、doPost······）来进行处理，并返回结果。</li>
+</ol>
+<h1 id="ajp数据包处理">AJP数据包处理</h1>
+<p>对于HTTP请求和AJP请求的数据包，在封装成request和response对象之后的流程并无差别，主要区别就是对socket流量处理和Processor解析的过程不同。</p>
+<p><code>org.apache.coyote.Processor</code>接口提供了这些功能，对于不同的协议，有不同的接口实现类。负责处理AJP请求的实现类为<code>AjpProcessor</code>：</p>
+<figure data-type="image" tabindex="6"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315161900.png" alt="image-20210315161900016" loading="lazy"></figure>
+<p>在<code>AjpProcessor</code>的<code>service()</code>方法中调用了<code>prepareRequest()</code>方法进行数据预处理：</p>
+<figure data-type="image" tabindex="7"><img src="C:%5CUsers%5C45258%5CAppData%5CRoaming%5CTypora%5Ctypora-user-images%5Cimage-20210315162453835.png" alt="image-20210315162453835" loading="lazy"></figure>
+<p>而之后会调用Adapter来将请求交给Container来处理：</p>
+<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
+<p>AJP协议中的漏洞，就出现在<code>prepareRequest()</code>方法中。</p>
+<h1 id="漏洞复现">漏洞复现</h1>
+<p>poc：https://github.com/YDHCUI/CNVD-2020-10487-Tomcat-Ajp-lfi</p>
+<h2 id="环境搭建">环境搭建</h2>
+<p>在环境搭建这里我还是踩了一点小坑，先说一些我本地的环境：</p>
+<ul>
+<li>Windows10 专业版</li>
+<li>JDK 8u281</li>
+<li>IDEA专业版 2020.3.2</li>
+</ul>
+<p>以下是我搭建出正常复现环境的步骤：</p>
+<ol>
+<li>
+<p>github上下载存在漏洞的Tomcat版本：https://github.com/apache/tomcat/archive/9.0.19.zip</p>
+</li>
+<li>
+<p>解压，在文件目录中添加pom.xml，改为maven方式构建项目，其中pom.xml文件内容如下：</p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;
+         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;groupId&gt;org.apache.tomcat&lt;/groupId&gt;
+    &lt;artifactId&gt;tomcat&lt;/artifactId&gt;
+    &lt;name&gt;tomcat&lt;/name&gt;
+    &lt;version&gt;9.0.19&lt;/version&gt;
+
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;junit&lt;/groupId&gt;
+            &lt;artifactId&gt;junit&lt;/artifactId&gt;
+            &lt;version&gt;4.12&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.ant&lt;/groupId&gt;
+            &lt;artifactId&gt;ant&lt;/artifactId&gt;
+            &lt;version&gt;1.10.5&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;wsdl4j&lt;/groupId&gt;
+            &lt;artifactId&gt;wsdl4j&lt;/artifactId&gt;
+            &lt;version&gt;1.6.3&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.geronimo.specs&lt;/groupId&gt;
+            &lt;artifactId&gt;geronimo-jaxrpc_1.1_spec&lt;/artifactId&gt;
+            &lt;version&gt;2.1&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.eclipse.jdt&lt;/groupId&gt;
+            &lt;artifactId&gt;ecj&lt;/artifactId&gt;
+            &lt;version&gt;3.17.0&lt;/version&gt;
+        &lt;/dependency&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.easymock&lt;/groupId&gt;
+            &lt;artifactId&gt;easymock&lt;/artifactId&gt;
+            &lt;version&gt;4.0.2&lt;/version&gt;
+            &lt;scope&gt;test&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                &lt;configuration&gt;
+                    &lt;source&gt;1.8&lt;/source&gt;
+                    &lt;target&gt;1.8&lt;/target&gt;
+                    &lt;encoding&gt;UTF-8&lt;/encoding&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;
+                &lt;configuration&gt;
+                    &lt;encoding&gt;UTF-8&lt;/encoding&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;
+</code></pre>
+</li>
+<li>
+<p>在根目录里新建<code>home</code>文件夹，把<code>webapps</code>和<code>conf</code>文件夹放入<code>home</code>文件夹中：</p>
+<figure data-type="image" tabindex="9"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001210.png" alt="image-20210316001203592" loading="lazy"></figure>
+</li>
+<li>
+<p>在IDEA中导入项目，选择我们新建的pom.xml文件：</p>
+<figure data-type="image" tabindex="10"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001439.png" alt="image-20210316001439225" loading="lazy"></figure>
+</li>
+</ol>
+<figure data-type="image" tabindex="11"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001506.png" alt="image-20210316001506159" loading="lazy"></figure>
+<ol start="5">
+<li>
+<p>导入项目之后，将<code>java</code>文件夹标记为<code>Sources Root</code>，把<code>test</code>文件夹标记为<code>Test Sources Root</code>：</p>
+<figure data-type="image" tabindex="12"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001733.png" alt="" loading="lazy"></figure>
+</li>
+<li>
+<p>把 <code>home/webapps/examples/WEB-INF/classes/trailers</code> 目录拷贝到 <code>test</code> 目录下：</p>
+<figure data-type="image" tabindex="13"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001838.png" alt="image-20210316001838650" loading="lazy"></figure>
+</li>
+<li>
+<p>把 <code>home/webapps/examples/WEB-INF/classes/util/CookieFilter.java</code> 文件拷贝到 <code>test/util</code> 目录下：</p>
+<figure data-type="image" tabindex="14"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001919.png" alt="image-20210316001919101" loading="lazy"></figure>
+</li>
+<li>
+<p>找到 <code>BootStrap</code>类的<code>main</code>方法，运行，这时候应该会出现下面错误：</p>
+<figure data-type="image" tabindex="15"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002035.png" alt="image-20210316002035809" loading="lazy"></figure>
+</li>
+<li>
+<p>添加VM参数：<code>-Dcatalina.home={你的项目路径}\home</code>：</p>
+<figure data-type="image" tabindex="16"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002211.png" alt="image-20210316002211736" loading="lazy"></figure>
+</li>
+<li>
+<p>在<code>org.apache.catalina.startup.ContextConfig</code>类中的<code>configureStart</code>方法中添加<code>context.addServletContainerInitializer(new JasperInitializer(), null);</code>，用于初始化JSP解析器：</p>
+<figure data-type="image" tabindex="17"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002433.png" alt="image-20210316002433890" loading="lazy"></figure>
+</li>
+<li>
+<p>删除 <code>home/webapps/examples</code> 文件夹，然后运行 <code>main</code> 方法，访问<code>127.0.0.1:8080</code>：</p>
+<figure data-type="image" tabindex="18"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002617.png" alt="image-20210316002617780" loading="lazy"></figure>
+</li>
+<li>
+<p>同时可以看到8009端口已经开放：</p>
+</li>
+</ol>
+<figure data-type="image" tabindex="19"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315144452.png" alt="image-20210315144452701" loading="lazy"></figure>
+<h2 id="文件读取">文件读取</h2>
+<p>在<code>AjpProcessor#prepareRequest</code>方法打上断点，调试启动tomcat，并使用POC来发送ajp请求：</p>
+<figure data-type="image" tabindex="20"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163242.png" alt="image-20210315163241922" loading="lazy"></figure>
+<p>在699行出进行了数据包头部信息的读取，当头设置为<code>SC_A_REQ_ATTRIBUTE</code>的时候，则会读取出n和v：</p>
+<figure data-type="image" tabindex="21"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163647.png" alt="image-20210315163647369" loading="lazy"></figure>
+<p>然后当n不为<code>SC_A_REQ_LOCAL_ADDR</code>、<code>SC_A_REQ_REMOTE_PORT</code>、<code>SC_A_SSL_PROTOCOL</code>的时候，会用v来对n进行赋值：</p>
+<figure data-type="image" tabindex="22"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163728.png" alt="image-20210315163728511" loading="lazy"></figure>
+<p>POC中发送的数据包一共会读取三次：</p>
+<pre><code>n = javax.servlet.include.request_uri	v = /
+
+n = javax.servlet.include.path_info		v = WEB-INF/web.xml
+
+n = javax.servlet.include.servlet_path	v = /
+</code></pre>
+<p>对应POC中的这一部分代码：</p>
+<figure data-type="image" tabindex="23"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164145.png" alt="image-20210315164145601" loading="lazy"></figure>
+<p>之后进入<code>getAdapter().service()</code>方法中，这里可以看到我们请求的URL为<code>/asdf</code>：</p>
+<figure data-type="image" tabindex="24"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164452.png" alt="image-20210315164452905" loading="lazy"></figure>
+<p><code>/asdf</code>这个路由是我们故意构造的一个不存在的路由，当路由无法匹配对应的servlet的时候会由<code>org.apache.catalina.servlets.DefaultServlet</code>来处理请求，是在<code>{CATALINA_HOME}/conf/web.xml</code>中默认配置的：</p>
+<figure data-type="image" tabindex="25"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164813.png" alt="image-20210315164813262" loading="lazy"></figure>
+<figure data-type="image" tabindex="26"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004730.png" alt="image-20210316004730879" loading="lazy"></figure>
+<p>在<code>DefaultServlet</code>的<code>service()</code>方法中打下断点，当我们请求方式为<code>GET</code>方式的时候，存在<code>service()-&gt;doGet()-&gt;serveResource()</code>的调用链：</p>
+<figure data-type="image" tabindex="27"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003333.png" alt="image-20210316003333899" loading="lazy"></figure>
+<p>再贴一个调用栈：</p>
+<figure data-type="image" tabindex="28"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003409.png" alt="image-20210316003409095" loading="lazy"></figure>
+<p>在<code>serveResource()</code>中调用了<code>getRelativePath()</code>方法：</p>
+<figure data-type="image" tabindex="29"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003649.png" alt="image-20210316003649513" loading="lazy"></figure>
+<p>在这个方法中会读取出我们POC中构造的恶意属性，然后把两个属性拼接成一个path：</p>
+<figure data-type="image" tabindex="30"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003825.png" alt="image-20210316003824993" loading="lazy"></figure>
+<p>然后在<code>serveResource()</code>方法中会把这个path传入<code>resources.getResource()</code>方法中造成任意文件读取：</p>
+<figure data-type="image" tabindex="31"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003942.png" alt="image-20210316003942820" loading="lazy"></figure>
+<p>之后会把根据path获取到文件资源序列化输出，这样客户端再根据AJP协议的数据包进行解包，就能读取到文件内容了：</p>
+<figure data-type="image" tabindex="32"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004240.png" alt="image-20210316004240365" loading="lazy"></figure>
+<h2 id="jsp文件包含">JSP文件包含</h2>
+<p>Tomcat会将以<code>.jsp、.jspx</code>结尾的url交给<code>org.apache.jasper.servlet.JspServlet</code>来处理：</p>
+<figure data-type="image" tabindex="33"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010505.png" alt="image-20210316010505803" loading="lazy"></figure>
+<figure data-type="image" tabindex="34"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010516.png" alt="image-20210316010516564" loading="lazy"></figure>
+<p>所以我们可以修改POC中的请求路径：</p>
+<figure data-type="image" tabindex="35"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316011052.png" alt="image-20210316011052683" loading="lazy"></figure>
+<p>然后再<code>JspServlet#service</code>方法中打下断点：</p>
+<figure data-type="image" tabindex="36"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012336.png" alt="image-20210316012336568" loading="lazy"></figure>
+<p>这里同样会获取<code>INCLUDE_SERVLET_PATH</code>和<code>INCLUDE_PATH_INFO</code>两个属性，而这两个属性是可通过构造AJP请求数据包来控制的，这两个属性拼接到<code>jspUri</code>之后，会进入到<code>serviceJsp</code>方法：</p>
+<figure data-type="image" tabindex="37"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012711.png" alt="image-20210316012711652" loading="lazy"></figure>
+<p>这个方法会把<code>jspUri</code>（上述为<code>/WEB-INF/testfile</code>）所表示的文件解析为JSP文件，从而形成文件包含：</p>
+<figure data-type="image" tabindex="38"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316013019.png" alt="image-20210316013019379" loading="lazy"></figure>
+<p>值得注意的是，这个所包含的文件和我们请求的url（<code>/asdf/f4de.jsp</code>）是没有关系的。</p>
+<h1 id="其他">其他</h1>
+<h2 id="读取其他context">读取其他Context</h2>
+<p>默认情况下是读取的主目录（ROOT目录）中的文件内容，此外还可以读取其他Context中文件的内容，只需要修改一下请求的url即可（文件包含同理）：</p>
+<figure data-type="image" tabindex="39"><img src="https://i.loli.net/2021/03/16/4zv5V8bDfcwEPTL.png" alt="image-20210316102141936" loading="lazy"></figure>
+<figure data-type="image" tabindex="40"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104937.png" alt="image-20210316102213823" loading="lazy"></figure>
+<h2 id="目录穿越可读性">目录穿越可读性</h2>
+<p>我们尝试穿越出webapps这个目录，读取其他文件夹中的内容：</p>
+<p><code>DefaultServlet#serveResource</code>打下断点，在<code>resources.getResource</code>方法中：</p>
+<figure data-type="image" tabindex="41"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104946.png" alt="image-20210316103039869" loading="lazy"></figure>
+<figure data-type="image" tabindex="42"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105005.png" alt="image-20210316103129512" loading="lazy"></figure>
+<p>跟进<code>RequestUtil.normalize</code>：</p>
+<figure data-type="image" tabindex="43"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105018.png" alt="image-20210316103339267" loading="lazy"></figure>
+<p>只要包含<code>/../</code>，就会返回<code>null</code>，直接抛出异常：</p>
+<figure data-type="image" tabindex="44"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105027.png" alt="image-20210316103512792" loading="lazy"></figure>
+<h1 id="修复">修复</h1>
+<ul>
+<li>
+<p>升级Tomcat版本</p>
+</li>
+<li>
+<p>禁用AJP协议（删除或注释conf/server.xml中对应的内容）</p>
+</li>
+<li>
+<p>为AJP Connector配置secret，或为AJP设置协议认证凭证</p>
+<pre><code class="language-xml">&lt;Connector port=&quot;8009&quot;protocol=&quot;AJP/1.3&quot; redirectPort=&quot;8443&quot;address=&quot;YOUR_TOMCAT_IP_ADDRESS&quot; secret=&quot;YOUR_TOMCAT_AJP_SECRET&quot;/&gt;
+
+&lt;Connector port=&quot;8009&quot;protocol=&quot;AJP/1.3&quot; redirectPort=&quot;8443&quot;address=&quot;YOUR_TOMCAT_IP_ADDRESS&quot;requiredSecret=&quot;YOUR_TOMCAT_AJP_SECRET&quot; /&gt;
+</code></pre>
+</li>
+</ul>
+<h1 id="参考">参考</h1>
+<p>[攻击Java Web应用 - <a href="https://zhishihezi.net/b/5d644b6f81cbc9e40460fe7eea3c7925#open">Java Web安全] (zhishihezi.net)</a></p>
+<p><a href="https://l3yx.github.io/2020/03/26/Tomcat-Ajp%E5%8D%8F%E8%AE%AE%E6%BC%8F%E6%B4%9E/#IDEA%E8%B0%83%E8%AF%95Tomcat">Tomcat Ajp协议漏洞 | l3yx's blog</a></p>
+<p><a href="https://www.cnblogs.com/jhxxb/p/10768580.html">IDEA 导入 Tomcat9 源码 - 江湖小小白 - 博客园 (cnblogs.com)</a></p>
+<p>https://github.com/YDHCUI/CNVD-2020-10487-Tomcat-Ajp-lfi</p>
+<p><a href="https://blog.csdn.net/xlgen157387/article/details/79006434">四张图带你了解Tomcat系统架构--让面试官颤抖的Tomcat回答系列！_徐刘根的博客-CSDN博客</a></p>
+<p><a href="https://e.xieyonghui.com/apache-tomcat-ajp-leak-at-2020-02-21_196.html">apache tomcat AJP漏洞修复方案(2020-02-21) - Exception List (xieyonghui.com)</a></p>
+
+        </div>
+
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://f4de-bak.github.io/tag/Mxwmpq9ir/">
+            <span class="flex-auto">Java</span>
+          </a>
+        
+
+
+        <div class="flex justify-between py-8">
+          
+
+          
+            <div class="next-post">
+              <a href="https://f4de-bak.github.io/post/UkRuYBIYv/">
+                <h3 class="post-title">
+                  Javassist学习
+                  <i class="ri-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+
+      </div>
+    </div>
+
+    <script src="https://f4de-bak.github.io/media/prism.js"></script>  
+<script>
+
+Prism.highlightAll()
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>
