@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
     <title>F4DE的博客</title>
-    <updated>2021-03-16T03:03:24.999Z</updated>
+    <updated>2021-03-16T03:06:59.947Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -66,9 +66,9 @@
 <p><code>org.apache.coyote.Processor</code>接口提供了这些功能，对于不同的协议，有不同的接口实现类。负责处理AJP请求的实现类为<code>AjpProcessor</code>：</p>
 <figure data-type="image" tabindex="6"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315161900.png" alt="image-20210315161900016" loading="lazy"></figure>
 <p>在<code>AjpProcessor</code>的<code>service()</code>方法中调用了<code>prepareRequest()</code>方法进行数据预处理：</p>
-<figure data-type="image" tabindex="7"><img src="C:%5CUsers%5C45258%5CAppData%5CRoaming%5CTypora%5Ctypora-user-images%5Cimage-20210315162453835.png" alt="image-20210315162453835" loading="lazy"></figure>
+<figure data-type="image" tabindex="7"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
 <p>而之后会调用Adapter来将请求交给Container来处理：</p>
-<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
+<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315162639.png" alt="image-20210315162639014" loading="lazy"></figure>
 <p>AJP协议中的漏洞，就出现在<code>prepareRequest()</code>方法中。</p>
 <h1 id="漏洞复现">漏洞复现</h1>
 <p>poc：https://github.com/YDHCUI/CNVD-2020-10487-Tomcat-Ajp-lfi</p>
