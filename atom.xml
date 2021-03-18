@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
     <title>F4DE的博客</title>
-    <updated>2021-03-18T11:13:15.828Z</updated>
+    <updated>2021-03-18T14:55:34.404Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -10,6 +10,119 @@
     <logo>https://f4de-bak.github.io/images/avatar.png</logo>
     <icon>https://f4de-bak.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, F4DE的博客</rights>
+    <entry>
+        <title type="html"><![CDATA[Shiro复盘--权限绕过（一）]]></title>
+        <id>https://f4de-bak.github.io/post/0ZTfZW4mf/</id>
+        <link href="https://f4de-bak.github.io/post/0ZTfZW4mf/">
+        </link>
+        <updated>2021-03-18T14:42:17.000Z</updated>
+        <summary type="html"><![CDATA[<p>shiro漏洞复盘系列--1.50版本以下的权限绕过复现分析。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>shiro漏洞复盘系列--1.50版本以下的权限绕过复现分析。</p>
+<!-- more -->
+<h1 id="简介">简介</h1>
+<p>影响版本：shiro &lt; 1.50</p>
+<h1 id="配置">配置</h1>
+<p>依赖：</p>
+<pre><code class="language-xml">        &lt;!-- shiro dependence --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+            &lt;artifactId&gt;shiro-web&lt;/artifactId&gt;
+            &lt;version&gt;1.4.2&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+            &lt;artifactId&gt;shiro-spring&lt;/artifactId&gt;
+            &lt;version&gt;1.4.2&lt;/version&gt;
+        &lt;/dependency&gt;
+</code></pre>
+<p>shiro配置：</p>
+<pre><code class="language-java">@Configuration
+public class shiroConfig {
+    @Bean
+    Auth auth() {
+        return new Auth();
+    }
+
+    @Bean
+    SecurityManager securityManager() {
+        DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
+        manager.setRealm(auth());
+        return manager;
+    }
+
+    @Bean
+    ShiroFilterFactoryBean shiroFilterFactoryBean() {
+        ShiroFilterFactoryBean bean = new ShiroFilterFactoryBean();
+        bean.setSecurityManager(securityManager());
+        // 配置认证权限
+        bean.setLoginUrl(&quot;/login&quot;);
+        HashMap&lt;String, String&gt; map = new HashMap&lt;&gt;();
+        map.put(&quot;/login&quot;, &quot;anon&quot;);
+        map.put(&quot;/user&quot;, &quot;anon&quot;);
+        map.put(&quot;/admin&quot;, &quot;authc&quot;);
+        bean.setFilterChainDefinitionMap(map);
+        return bean;
+    }
+}
+</code></pre>
+<h1 id="分析">分析</h1>
+<p>正常访问<code>/admin</code>路由，因为过滤器的配置，所以会302跳转到<code>/login</code>路由下：</p>
+<figure data-type="image" tabindex="1"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210318111544.png" alt="image-20210318111544460" loading="lazy"></figure>
+<p>在<code>/admin</code>路由后面加<code>/</code>，访问<code>/admin/</code>路由，发现可以绕过shiro的鉴权：</p>
+<figure data-type="image" tabindex="2"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210318111607.png" alt="image-20210318111607786" loading="lazy"></figure>
+<h2 id="shiro">shiro</h2>
+<p>shiro处理URL从而进行匹配的方法为<code>org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver#getChain</code>，打下断点，发送请求：</p>
+<figure data-type="image" tabindex="3"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210318111949.png" alt="image-20210318111949903" loading="lazy"></figure>
+<p>在获取到请求的URL之后，会进入到<code>pathMatches</code>方法中进行匹配：</p>
+<figure data-type="image" tabindex="4"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210318112142.png" alt="image-20210318112142653" loading="lazy"></figure>
+<p>连续跟进到<code>doMatch</code>方法中：</p>
+<figure data-type="image" tabindex="5"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210318112700.png" alt="image-20210318112700753" loading="lazy"></figure>
+<pre><code class="language-java">return pattern.endsWith(this.pathSeparator) ? path.endsWith(this.pathSeparator) : !path.endsWith(this.pathSeparator);
+</code></pre>
+<p>在这一行中，pattern为<code>/admin</code>，pathSeparator为<code>/</code>，path为<code>/admin/</code>，所以返回的<code>!path.endsWith(this.pathSeparator)</code>就为<code>false</code>，shiro就认为没有匹配到对应路由，绕过了shiro的权限验证。</p>
+<h2 id="spring">Spring</h2>
+<p>Spring处理URL的逻辑在<code>org.springframework.web.util.UrlPathHelper#getLookupPathForRequest</code>方法中：</p>
+<pre><code class="language-java">    public String getLookupPathForRequest(HttpServletRequest request) {
+        String pathWithinApp = this.getPathWithinApplication(request);
+        if (!this.alwaysUseFullPath &amp;&amp; !this.skipServletPathDetermination(request)) {
+            String rest = this.getPathWithinServletMapping(request, pathWithinApp);
+            return StringUtils.hasLength(rest) ? rest : pathWithinApp;
+        } else {
+            return pathWithinApp;
+        }
+    }
+</code></pre>
+<p>获取到请求路径之后并返回到<code>getHandlerInternal</code>方法中，进入<code>lookupHandlerMethod</code>中寻找<em>HandlerMethod</em>：</p>
+<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318140402.png" alt="image-20210318140402323" loading="lazy"></figure>
+<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318140726.png" alt="image-20210318140726533" loading="lazy"></figure>
+<p>跟进该方法，在获取到<code>mappingRegistry</code>之后会在map中尝试获取路由：</p>
+<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318141003.png" alt="image-20210318141003299" loading="lazy"></figure>
+<p><code>this.pathLookup</code>中储存了我们配置的三个路由和另外一个<code>/error</code>路由，调用<code>get</code>方法尝试匹配我们的请求路径：</p>
+<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318141007.png" alt="image-20210318141007802" loading="lazy"></figure>
+<p>获取的结果为<code>null</code>，之后会调用<code>addMatchingMappings</code>方法，便利<code>mappingRegistry</code>中的每一个map进行匹配：</p>
+<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318141531.png" alt="test" loading="lazy"></figure>
+<p>主要匹配的逻辑是在<code>getMatchingMapping</code>方法中：</p>
+<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318141658.png" alt="image-20210318141657981" loading="lazy"></figure>
+<p>接着跟进到<code>getMatchingCondition</code>方法中，再跟入<code>this.patternsCondition.getMatchingCondition(request)</code>：</p>
+<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318142216.png" alt="image-20210318142215935" loading="lazy"></figure>
+<p>获取到<code>lookupPath</code>之后再跟入<code>getMatchingPatterns</code>方法：</p>
+<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318142438.png" alt="image-20210318142438109" loading="lazy"></figure>
+<p>再跟入<code>getMatingPattern</code>方法：</p>
+<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318142539.png" alt="image-20210318142539119" loading="lazy"></figure>
+<p>这个方法最后的返回值如下：</p>
+<pre><code class="language-java">return this.useTrailingSlashMatch &amp;&amp; !pattern.endsWith(&quot;/&quot;) &amp;&amp; this.pathMatcher.match(pattern + &quot;/&quot;, lookupPath) ? pattern + &quot;/&quot; : null;
+</code></pre>
+<p>会在<code>pattern</code>（<code>/admin</code>）后加一个<code>/</code>：</p>
+<figure data-type="image" tabindex="15"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318142810.png" alt="image-20210318142810475" loading="lazy"></figure>
+<p>逐层返回，获取到对应的<code>hanlderMethod</code>，spring处的URL匹配成功：</p>
+<figure data-type="image" tabindex="16"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318142956.png" alt="image-20210318142956771" loading="lazy"></figure>
+<h1 id="修复">修复</h1>
+<p>通过diff一下新版本的代码，可以发现shiro对于此漏洞的修复方案是<strong>对URL和匹配的pattern的末尾做了去<code>/</code>号的处理。</strong></p>
+<figure data-type="image" tabindex="17"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318225201.png" alt="image-20210318225201723" loading="lazy"></figure>
+<p>下篇文章将会复现分析 shiro &lt; 1.5.2 版本下的权限绕过问题。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Tomcat AJP协议漏洞复现]]></title>
         <id>https://f4de-bak.github.io/post/JB6ZNGMXX/</id>
