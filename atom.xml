@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
     <title>F4DE的博客</title>
-    <updated>2021-03-18T14:56:00.490Z</updated>
+    <updated>2021-03-19T01:46:23.499Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
@@ -11,14 +11,86 @@
     <icon>https://f4de-bak.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, F4DE的博客</rights>
     <entry>
+        <title type="html"><![CDATA[Shiro复盘--权限绕过（二）]]></title>
+        <id>https://f4de-bak.github.io/post/pHD8v5hTZ/</id>
+        <link href="https://f4de-bak.github.io/post/pHD8v5hTZ/">
+        </link>
+        <updated>2021-03-18T15:58:56.000Z</updated>
+        <summary type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.52版本以下的权限绕过复现分析。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.52版本以下的权限绕过复现分析。</p>
+<!-- more -->
+<h1 id="简介">简介</h1>
+<p>漏洞影响范围：shiro &lt; 1.5.2</p>
+<h1 id="配置">配置</h1>
+<pre><code class="language-xml">        &lt;!-- shiro dependence --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+            &lt;artifactId&gt;shiro-web&lt;/artifactId&gt;
+            &lt;version&gt;1.5.1&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+            &lt;artifactId&gt;shiro-spring&lt;/artifactId&gt;
+            &lt;version&gt;1.4.2&lt;/version&gt;
+        &lt;/dependency&gt;
+</code></pre>
+<p>shiro config同上一篇文章。</p>
+<h1 id="分析">分析</h1>
+<p>访问<code>/admin/</code>，已经无法绕过shiro过滤器的拦截：</p>
+<figure data-type="image" tabindex="1"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318204849.png" alt="image-20210318204406613" loading="lazy"></figure>
+<p>访问<code>/;/admin</code>，成功绕过shiro拦截：</p>
+<figure data-type="image" tabindex="2"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318204845.png" alt="image-20210318204649795" loading="lazy"></figure>
+<h2 id="shiro">shiro</h2>
+<p>还是在<code>org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver#getChain</code>，打下断点，发送请求：</p>
+<figure data-type="image" tabindex="3"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205038.png" alt="image-20210318205038597" loading="lazy"></figure>
+<p>主要在<code>getPathWithApplication</code>方法里：</p>
+<figure data-type="image" tabindex="4"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205119.png" alt="image-20210318205119386" loading="lazy"></figure>
+<p>这里会获取到请求的<code>contextPath</code>和<code>requestUri</code>，获取到<code>uri</code>为<code>/;/admin</code>之后进入<code>decodeAndCleanUriString</code>方法中：</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205306.png" alt="image-20210318205306717" loading="lazy"></figure>
+<p><code>decodeAndCleanUriString</code>方法中把请求的<code>uri</code>按分号进行截断：</p>
+<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205340.png" alt="image-20210318205340398" loading="lazy"></figure>
+<p><code>/;/admin</code>经过shiro的处理之后，我们请求的路由就变成了<code>/</code>，由于<code>/</code>路由下没有设置过滤器，所以就shiro的过滤器无法匹配，绕过了shiro的权限认证。</p>
+<h2 id="spring">Spring</h2>
+<p>依然在<code>org.springframework.web.util.UrlPathHelper#getLookupPathForRequest</code>方法中打下断点，发送请求开始调试：</p>
+<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319003838.png" alt="image-20210319003838013" loading="lazy"></figure>
+<p>这次主要跟入<code>getPathWithinApplication</code>方法：</p>
+<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319003935.png" alt="image-20210319003935113" loading="lazy"></figure>
+<p>再跟入<code>getRequestUri</code>方法：</p>
+<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004024.png" alt="image-20210319004024544" loading="lazy"></figure>
+<p>主要看<code>decodeAndCleanUriString</code>方法，这个方法中对请求的路由做了一些处理：</p>
+<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004119.png" alt="image-20210319004119307" loading="lazy"></figure>
+<p>跟入第一个方法<code>removeSemicolonContent</code>，经过这部分代码处理之后<code>/;/admin</code>变成了<code>//admin</code>：</p>
+<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004437.png" alt="image-20210319004437224" loading="lazy"></figure>
+<p>再跟入第三个方法<code>getSanitizedPath</code>，在获取到<code>//</code>的索引值之后，直接删除该索引上对应的字符，<code>//admin</code>也就变了<code>/admin</code>：</p>
+<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004636.png" alt="image-20210319004636257" loading="lazy"></figure>
+<p>最后也就返回了<code>/admin</code>的路由，之后就是正常匹配 <em>hanlderMethod</em> 的过程了，不再赘述：</p>
+<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004921.png" alt="image-20210319004921899" loading="lazy"></figure>
+<h1 id="修复">修复</h1>
+<p>1.5.2版本的<code>org.aoache.shiro.web.util.WebUtils#getRequestUri</code>方法如下：</p>
+<pre><code class="language-java">public static String getRequestUri(HttpServletRequest request) {
+        String uri = (String)request.getAttribute(&quot;javax.servlet.include.request_uri&quot;);
+        if (uri == null) {
+            uri = valueOrEmpty(request.getContextPath()) + &quot;/&quot; + valueOrEmpty(request.getServletPath()) + valueOrEmpty(request.getPathInfo());
+        }
+
+        return normalize(decodeAndCleanUriString(request, uri));
+    }
+</code></pre>
+<p>uri获取的规则变成了<code>ContextPath</code> 、<code>ServletPath</code>、<code>PathInfo</code>三者拼接而成：</p>
+<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319092755.png" alt="image-20210319092755726" loading="lazy"></figure>
+<p><code>getServletPath</code>方法可以正确处理分号，再经过后续方法处理，<code>/;/admin</code>就被正常处理为了<code>/admin</code>，之后就会被shiro的过滤器正常拦截。</p>
+]]></content>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[Shiro复盘--权限绕过（一）]]></title>
         <id>https://f4de-bak.github.io/post/0ZTfZW4mf/</id>
         <link href="https://f4de-bak.github.io/post/0ZTfZW4mf/">
         </link>
         <updated>2021-03-18T14:42:17.000Z</updated>
-        <summary type="html"><![CDATA[<p>shiro漏洞复盘系列--1.50版本以下的权限绕过复现分析。</p>
+        <summary type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.50版本以下的权限绕过复现分析。</p>
 ]]></summary>
-        <content type="html"><![CDATA[<p>shiro漏洞复盘系列--1.50版本以下的权限绕过复现分析。</p>
+        <content type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.50版本以下的权限绕过复现分析。</p>
 <!-- more -->
 <h1 id="简介">简介</h1>
 <p>影响版本：shiro &lt; 1.50</p>

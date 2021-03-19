@@ -1,0 +1,301 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>F4DE的博客</title>
+<meta name="description" content="Keep fantasy" />
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616118333200">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
+
+<link rel="stylesheet" href="https://f4de-bak.github.io/styles/main.css">
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main px-4 flex flex-col lg:flex-row">
+      <div id="sidebar" class="sidebar-wrapper lg:static lg:w-1/4">
+  <div class="lg:sticky top-0">
+    <div class="sidebar-content">
+      <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
+        <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
+        <a href="https://f4de-bak.github.io">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616118333200" alt="">
+        </a>
+        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
+      </div>
+      
+        <div class="animated fadeInLeft" style="animation-delay: 0.4s">
+          <p class="my-4 text-gray-600 font-light hidden lg:block">
+            文章目录
+          </p>
+          <div class="toc-container hidden lg:block">
+            <ul class="markdownIt-TOC">
+<li><a href="#%E7%AE%80%E4%BB%8B">简介</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AE">配置</a></li>
+<li><a href="#%E5%88%86%E6%9E%90">分析</a>
+<ul>
+<li><a href="#shiro">shiro</a></li>
+<li><a href="#spring">Spring</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BF%AE%E5%A4%8D">修复</a></li>
+</ul>
+
+          </div>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="menu-container">
+  <i class="ri-arrow-left-line text-2xl cursor-pointer animated fadeIn close-menu-btn" onclick="closeMenu()"></i>
+  <div>
+    
+      
+        <a href="/" class="menu" style="animation-delay: 0s">
+          首页
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu" style="animation-delay: 0.2s">
+          标签
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu" style="animation-delay: 0.4s">
+          归档
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu" style="animation-delay: 0.6000000000000001s">
+          关于
+        </a>
+      
+    
+      
+        <a href="/post/links" class="menu" style="animation-delay: 0.8s">
+          友链
+        </a>
+      
+    
+  </div>
+  <div class="site-footer">
+    <div class="py-4 text-gray-700">Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a></div>
+    <a class="rss" href="https://f4de-bak.github.io/atom.xml" target="_blank">RSS</a>
+  </div>
+</div>
+<div class="mask" onclick="closeMenu()">
+</div>
+      <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
+        <h1 class="text-3xl font-bold lg:mt-16">Shiro复盘--权限绕过（二）</h1>
+        <div class="text-sm text-gray-700 lg:my-8">
+          2021-03-18 / 3 min read
+        </div>
+        
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319001233.jpg" alt="">
+        
+        <div class="post-content yue">
+          <p>Shiro漏洞复盘系列--1.52版本以下的权限绕过复现分析。</p>
+<!-- more -->
+<h1 id="简介">简介</h1>
+<p>漏洞影响范围：shiro &lt; 1.5.2</p>
+<h1 id="配置">配置</h1>
+<pre><code class="language-xml">        &lt;!-- shiro dependence --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+            &lt;artifactId&gt;shiro-web&lt;/artifactId&gt;
+            &lt;version&gt;1.5.1&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+            &lt;artifactId&gt;shiro-spring&lt;/artifactId&gt;
+            &lt;version&gt;1.4.2&lt;/version&gt;
+        &lt;/dependency&gt;
+</code></pre>
+<p>shiro config同上一篇文章。</p>
+<h1 id="分析">分析</h1>
+<p>访问<code>/admin/</code>，已经无法绕过shiro过滤器的拦截：</p>
+<figure data-type="image" tabindex="1"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318204849.png" alt="image-20210318204406613" loading="lazy"></figure>
+<p>访问<code>/;/admin</code>，成功绕过shiro拦截：</p>
+<figure data-type="image" tabindex="2"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318204845.png" alt="image-20210318204649795" loading="lazy"></figure>
+<h2 id="shiro">shiro</h2>
+<p>还是在<code>org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver#getChain</code>，打下断点，发送请求：</p>
+<figure data-type="image" tabindex="3"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205038.png" alt="image-20210318205038597" loading="lazy"></figure>
+<p>主要在<code>getPathWithApplication</code>方法里：</p>
+<figure data-type="image" tabindex="4"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205119.png" alt="image-20210318205119386" loading="lazy"></figure>
+<p>这里会获取到请求的<code>contextPath</code>和<code>requestUri</code>，获取到<code>uri</code>为<code>/;/admin</code>之后进入<code>decodeAndCleanUriString</code>方法中：</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205306.png" alt="image-20210318205306717" loading="lazy"></figure>
+<p><code>decodeAndCleanUriString</code>方法中把请求的<code>uri</code>按分号进行截断：</p>
+<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210318205340.png" alt="image-20210318205340398" loading="lazy"></figure>
+<p><code>/;/admin</code>经过shiro的处理之后，我们请求的路由就变成了<code>/</code>，由于<code>/</code>路由下没有设置过滤器，所以就shiro的过滤器无法匹配，绕过了shiro的权限认证。</p>
+<h2 id="spring">Spring</h2>
+<p>依然在<code>org.springframework.web.util.UrlPathHelper#getLookupPathForRequest</code>方法中打下断点，发送请求开始调试：</p>
+<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319003838.png" alt="image-20210319003838013" loading="lazy"></figure>
+<p>这次主要跟入<code>getPathWithinApplication</code>方法：</p>
+<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319003935.png" alt="image-20210319003935113" loading="lazy"></figure>
+<p>再跟入<code>getRequestUri</code>方法：</p>
+<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004024.png" alt="image-20210319004024544" loading="lazy"></figure>
+<p>主要看<code>decodeAndCleanUriString</code>方法，这个方法中对请求的路由做了一些处理：</p>
+<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004119.png" alt="image-20210319004119307" loading="lazy"></figure>
+<p>跟入第一个方法<code>removeSemicolonContent</code>，经过这部分代码处理之后<code>/;/admin</code>变成了<code>//admin</code>：</p>
+<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004437.png" alt="image-20210319004437224" loading="lazy"></figure>
+<p>再跟入第三个方法<code>getSanitizedPath</code>，在获取到<code>//</code>的索引值之后，直接删除该索引上对应的字符，<code>//admin</code>也就变了<code>/admin</code>：</p>
+<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004636.png" alt="image-20210319004636257" loading="lazy"></figure>
+<p>最后也就返回了<code>/admin</code>的路由，之后就是正常匹配 <em>hanlderMethod</em> 的过程了，不再赘述：</p>
+<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004921.png" alt="image-20210319004921899" loading="lazy"></figure>
+<h1 id="修复">修复</h1>
+<p>1.5.2版本的<code>org.aoache.shiro.web.util.WebUtils#getRequestUri</code>方法如下：</p>
+<pre><code class="language-java">public static String getRequestUri(HttpServletRequest request) {
+        String uri = (String)request.getAttribute(&quot;javax.servlet.include.request_uri&quot;);
+        if (uri == null) {
+            uri = valueOrEmpty(request.getContextPath()) + &quot;/&quot; + valueOrEmpty(request.getServletPath()) + valueOrEmpty(request.getPathInfo());
+        }
+
+        return normalize(decodeAndCleanUriString(request, uri));
+    }
+</code></pre>
+<p>uri获取的规则变成了<code>ContextPath</code> 、<code>ServletPath</code>、<code>PathInfo</code>三者拼接而成：</p>
+<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319092755.png" alt="image-20210319092755726" loading="lazy"></figure>
+<p><code>getServletPath</code>方法可以正确处理分号，再经过后续方法处理，<code>/;/admin</code>就被正常处理为了<code>/admin</code>，之后就会被shiro的过滤器正常拦截。</p>
+
+        </div>
+
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://f4de-bak.github.io/tag/87ShOp82y/">
+            <span class="flex-auto">shiro</span>
+          </a>
+        
+          <a class="animated fadeInUp p-2 items-center text-sm text-gray-700 border hover:bg-gray-300 leading-none rounded-full flex lg:inline-flex m-4 " href="https://f4de-bak.github.io/tag/Mxwmpq9ir/">
+            <span class="flex-auto">Java</span>
+          </a>
+        
+
+
+        <div class="flex justify-between py-8">
+          
+
+          
+            <div class="next-post">
+              <a href="https://f4de-bak.github.io/post/0ZTfZW4mf/">
+                <h3 class="post-title">
+                  Shiro复盘--权限绕过（一）
+                  <i class="ri-arrow-right-line"></i>
+                </h3>
+              </a>
+            </div>
+          
+        </div>
+
+        
+
+      </div>
+    </div>
+
+    <script src="https://f4de-bak.github.io/media/prism.js"></script>  
+<script>
+
+Prism.highlightAll()
+let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+// This should probably be throttled.
+// Especially because it triggers during smooth scrolling.
+// https://lodash.com/docs/4.17.10#throttle
+// You could do like...
+// window.addEventListener("scroll", () => {
+//    _.throttle(doThatStuff, 100);
+// });
+// Only not doing it here to keep this Pen dependency-free.
+
+window.addEventListener("scroll", event => {
+  let fromTop = window.scrollY;
+
+  mainNavLinks.forEach((link, index) => {
+    let section = document.getElementById(decodeURI(link.hash).substring(1));
+    let nextSection = null
+    if (mainNavLinks[index + 1]) {
+      nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+    }
+    if (section.offsetTop <= fromTop) {
+      if (nextSection) {
+        if (nextSection.offsetTop > fromTop) {
+          link.classList.add("current");
+        } else {
+          link.classList.remove("current");    
+        }
+      } else {
+        link.classList.add("current");
+      }
+    } else {
+      link.classList.remove("current");
+    }
+  });
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var lazyImages = [].slice.call(document.querySelectorAll(".post-feature-image.lazy"));
+
+  if ("IntersectionObserver" in window) {
+    let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          let lazyImage = entry.target
+          lazyImage.style.backgroundImage = `url(${lazyImage.dataset.bg})`
+          lazyImage.classList.remove("lazy")
+          lazyImageObserver.unobserve(lazyImage)
+        }
+      });
+    });
+
+    lazyImages.forEach(function(lazyImage) {
+      lazyImageObserver.observe(lazyImage)
+    })
+  } else {
+    // Possibly fall back to a more compatible method here
+  }
+});
+
+const menuContainer = document.querySelector('.menu-container')
+const menus = document.querySelectorAll('.menu-container .menu')
+const mask = document.querySelector('.mask')
+const contentWrapper = document.querySelector('.content-wrapper')
+const latestArticle = document.querySelector('.latest-article')
+const readMore = document.querySelector('.read-more')
+const indexPage = document.querySelector('.index-page')
+
+const isHome = location.pathname === '/'
+if (latestArticle) {
+  latestArticle.style.display = isHome ? 'block' : 'none'
+  readMore.style.display = isHome ? 'block' : 'none'
+  indexPage.style.display = isHome ? 'none' : 'block'
+}
+
+const openMenu = () => {
+  menuContainer.classList.add('open')
+  menus.forEach(menu => {
+    menu.classList.add('animated', 'fadeInLeft')
+  })
+  mask.classList.add('open')
+  contentWrapper.classList.add('is-second')
+}
+
+const closeMenu = () => {
+  menuContainer.classList.remove('open')
+  menus.forEach(menu => {
+    menu.classList.remove('animated', 'fadeInLeft')
+  })
+  mask.classList.remove('open')
+  contentWrapper.classList.remove('is-second')
+}
+</script>
+  
+  </body>
+</html>
