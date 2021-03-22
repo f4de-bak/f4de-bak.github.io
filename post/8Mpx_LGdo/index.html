@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>F4DE的博客</title>
 <meta name="description" content="Keep fantasy" />
-<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616404984336">
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616405499329">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
@@ -23,7 +23,7 @@
       <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
         <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
         <a href="https://f4de-bak.github.io">
-          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616404984336" alt="">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616405499329" alt="">
         </a>
         <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
       </div>
@@ -166,6 +166,7 @@
 <figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322082728.png" alt="image-20210322082728818" loading="lazy"></figure>
 <p><code>getPathWithinApplication</code>方法中的处理逻辑在上一篇中已经分析过，这里不再赘述，<code>getServletPath</code>方法获取到的其实是<code>Request</code>对象的某个属性值：</p>
 <figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322083656.png" alt="image-20210322083656733" loading="lazy"></figure>
+<p>正确获取到路径之后，就可以匹配对应的<code>Controller</code>了。</p>
 <h1 id="修复">修复</h1>
 <p>漏洞的成因在于shiro和Spring对于<code>;</code>的处理逻辑不一样：</p>
 <ul>
