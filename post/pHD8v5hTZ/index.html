@@ -2,9 +2,9 @@
   <head>
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>F4DE的博客</title>
+<title>星海</title>
 <meta name="description" content="Keep fantasy" />
-<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616405499329">
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616673699746">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
@@ -23,9 +23,9 @@
       <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
         <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
         <a href="https://f4de-bak.github.io">
-          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616405499329" alt="">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616673699746" alt="">
         </a>
-        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
+        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">星海</h1>
       </div>
       
         <div class="animated fadeInLeft" style="animation-delay: 0.4s">
@@ -145,7 +145,7 @@
 <figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004024.png" alt="image-20210319004024544" loading="lazy"></figure>
 <p>主要看<code>decodeAndCleanUriString</code>方法，这个方法中对请求的路由做了一些处理：</p>
 <figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004119.png" alt="image-20210319004119307" loading="lazy"></figure>
-<p>跟入第一个方法<code>removeSemicolonContent</code>，经过这部分代码处理之后<code>/;/admin</code>变成了<code>//admin</code>：</p>
+<p>跟入第一个方法<code>removeSemicolonContent</code>，经过这部分代码处理之后<code>/;/admin</code>变成了<code>//admin</code>（这部分的逻辑就是把URL中<code>;xxx/</code>的<code>;xxx</code>部分去掉）：</p>
 <figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004437.png" alt="image-20210319004437224" loading="lazy"></figure>
 <p>再跟入第三个方法<code>getSanitizedPath</code>，在获取到<code>//</code>的索引值之后，直接删除该索引上对应的字符，<code>//admin</code>也就变了<code>/admin</code>：</p>
 <figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004636.png" alt="image-20210319004636257" loading="lazy"></figure>

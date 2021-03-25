@@ -95,87 +95,107 @@
 <div class="mask" onclick="closeMenu()">
 </div>
       <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
-        <h1 class="text-3xl font-bold lg:mt-16">Shiro复盘--权限绕过（三）</h1>
+        <h1 class="text-3xl font-bold lg:mt-16">Shiro复盘--权限绕过（四）</h1>
         <div class="text-sm text-gray-700 lg:my-8">
-          2021-03-20 / 3 min read
+          2021-03-22 / 3 min read
         </div>
         
-          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210320232508.png" alt="">
+          <img class="post-feature-image rounded-lg mx-auto my-4" src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322215017.jpg" alt="">
         
         <div class="post-content yue">
-          <p>Shiro漏洞复盘系列--1.5.3版本以下的权限绕过复现分析。（CVE-2020-11989）</p>
+          <p>Shiro漏洞复盘系列--1.6.0版本以下的权限绕过复现分析。（CVE-2020-13933）</p>
 <!-- more -->
 <h1 id="简介">简介</h1>
-<p>漏洞影响范围：shiro &lt; 1.5.3</p>
-<p>利用条件：</p>
+<p>影响版本：shiro &lt; 1.6.0</p>
+<p>限制条件：</p>
 <ul>
-<li><em>Spring</em> 需要设置 <em>ContextPath</em></li>
-</ul>
-<ul>
-<li><em>alwaysUseFullPath</em> 必须设置为 <em>false</em></li>
+<li>Spring 匹配非固定路由，比如<code>/admin/{name}</code></li>
 </ul>
 <h1 id="配置">配置</h1>
-<p>Spring的版本配置有坑点，主要与的<code>alwaysUseFullPath</code>值有关。</p>
-<pre><code class="language-xml">    &lt;parent&gt;
-        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-        &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
-&lt;!--        &lt;version&gt;2.4.3&lt;/version&gt;--&gt;
-        &lt;version&gt;2.2.6.RELEASE&lt;/version&gt;
-        &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
-    &lt;/parent&gt;
+<pre><code class="language-xml">&lt;parent&gt;
+ &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+ &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+ &lt;version&gt;2.2.6.RELEASE&lt;/version&gt;
+ &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+&lt;/parent&gt;
+&lt;dependency&gt;
+ &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+ &lt;artifactId&gt;shiro-web&lt;/artifactId&gt;
+ &lt;version&gt;1.5.3&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<pre><code class="language-java">    @Bean
+    ShiroFilterFactoryBean shiroFilterFactoryBean() {
+        ShiroFilterFactoryBean bean = new ShiroFilterFactoryBean();
+        bean.setSecurityManager(securityManager());
+        // 配置认证权限
+        bean.setLoginUrl(&quot;/login&quot;);
+        HashMap&lt;String, String&gt; map = new HashMap&lt;&gt;();
+        map.put(&quot;/login&quot;, &quot;anon&quot;);
+        map.put(&quot;/user&quot;, &quot;anon&quot;);
+        map.put(&quot;/admin/*&quot;, &quot;authc&quot;);
+        bean.setFilterChainDefinitionMap(map);
+        return bean;
+    }
 
-        &lt;!-- shiro dependence --&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
-            &lt;artifactId&gt;shiro-web&lt;/artifactId&gt;
-            &lt;version&gt;1.5.3&lt;/version&gt;
-        &lt;/dependency&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
-            &lt;artifactId&gt;shiro-spring&lt;/artifactId&gt;
-            &lt;version&gt;1.5.2&lt;/version&gt;
-        &lt;/dependency&gt;
+
+    @ResponseBody
+    @RequestMapping(&quot;/admin/{name}&quot;)
+    public String admin(String name) {
+        return &quot;hello admin&quot;;
+    }
 </code></pre>
 <h1 id="分析">分析</h1>
-<p>设置 <code>context-path</code> 为 <code>test</code>：</p>
-<figure data-type="image" tabindex="1"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321230516.png" alt="image-20210321230509651" loading="lazy"></figure>
-<p>访问<code>/test/admin</code>，被shiro拦截：</p>
-<figure data-type="image" tabindex="2"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321230614.png" alt="image-20210321230614028" loading="lazy"></figure>
-<p>访问<code>/;/test/admin</code>，绕过shiro鉴权：</p>
-<figure data-type="image" tabindex="3"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321230654.png" alt="image-20210321230654282" loading="lazy"></figure>
+<p>正常访问<code>/admin/auth</code>，被shiro拦截：</p>
+<figure data-type="image" tabindex="1"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322235122.png" alt="image-20210322235122836" loading="lazy"></figure>
+<p>访问<code>/admin/%3bauth</code>，绕过shiro拦截：</p>
+<figure data-type="image" tabindex="2"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322235210.png" alt="image-20210322235210614" loading="lazy"></figure>
 <h2 id="shiro">shiro</h2>
-<p>依然是在<code>org.apache.shiro.web.filter.mgt.PathMatchingFilterChainResolver#getChain</code>这个方法打下断点，调试shiro来处理URL请求的过程，跟进<code>getPathWithinApplication</code>方法：</p>
-<figure data-type="image" tabindex="4"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321231919.png" alt="image-20210321231919360" loading="lazy"></figure>
-<p>通过<code>gerRequestUri</code>方法获得的结果是<code>/</code>：</p>
-<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321233255.png" alt="image-20210321233254981" loading="lazy"></figure>
-<p>所以跟进到该方法内部调试，在<code>1.5.2</code>的补丁版本中我们知道URL的获取规则变成了<code>ContextPath</code>、<code>ServletPath</code>、<code>PathInfo</code>三者拼接而成：</p>
-<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321233426.png" alt="image-20210321233426337" loading="lazy"></figure>
-<p>问题就处在<code>getContextPath</code>方法中，经过这个方法之后可以获得带<code>;</code>号的<code>ContextPath</code>：</p>
-<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321234141.png" alt="image-20210321234141918" loading="lazy"></figure>
-<p>三者拼接之后URL为<code>/;/test//admin</code>，之后传入<code>decodeAndCleanUriString</code>方法中，仅仅保留了<code>;</code>号前面的部分：</p>
-<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321234354.png" alt="image-20210321234353933" loading="lazy"></figure>
-<p>那么由shiro处理完成之后的结果就是<code>/</code>，从而绕过了shiro鉴权：</p>
-<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210321234545.png" alt="image-20210321234545785" loading="lazy"></figure>
+<p>来看shiro对于URL处理的部分，跟入<code>getServletPath</code>：</p>
+<figure data-type="image" tabindex="3"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322235759.png" alt="image-20210322235758954" loading="lazy"></figure>
+<p>URL会先被URLdecode一次：</p>
+<figure data-type="image" tabindex="4"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000407.png" alt="image-20210323000407759" loading="lazy"></figure>
+<p><code>%3b --&gt; ;</code>，然后进入shiro的<code>;</code>号截断过程：</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000522.png" alt="image-20210323000522704" loading="lazy"></figure>
+<p>之后会判断处理的结果是否以<code>/</code>结尾，如是，则去之：</p>
+<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000703.png" alt="image-20210323000703735" loading="lazy"></figure>
+<p>之后会进入URL和pattern的匹配逻辑中：</p>
+<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000931.png" alt="image-20210323000931573" loading="lazy"></figure>
+<p><code>/admin/*</code>无法匹配<code>/amdin</code>，所以就导致了shiro的权限绕过：</p>
+<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323104331.png" alt="image-20210323104331242" loading="lazy"></figure>
 <h2 id="spring">Spring</h2>
-<p>Spring 是否调用 <code>getPathWithinServletMapping</code> 方法和 <code>alwaysUseFullPath</code> 的值有关，Spring官方称该值默认为 false，但是我在使用最新版Spring的时候却是默认为 true ，导致漏洞无法复现（待解决），下面两张图是不同版本的Spring的差异。</p>
-<p>5.2.5版本的Spring：</p>
-<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322081855.png" alt="image-20210322081854865" loading="lazy"></figure>
-<p>5.3.4版本的Spring：</p>
-<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322171135.png" alt="image-20210322171135294" loading="lazy"></figure>
-<p>只有当<code>alwaysUseFullPath</code>为<code>false</code>的情况下才会进入<code>getPathWithinServletMapping</code>中，经过<code>getPathWithinServletMapping</code>处理之后可以正确获取到路径：</p>
-<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322082728.png" alt="image-20210322082728818" loading="lazy"></figure>
-<p><code>getPathWithinApplication</code>方法中的处理逻辑在上一篇中已经分析过，这里不再赘述，<code>getServletPath</code>方法获取到的其实是<code>Request</code>对象的某个属性值：</p>
-<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322083656.png" alt="image-20210322083656733" loading="lazy"></figure>
-<p>正确获取到路径之后，就可以匹配对应的<code>Controller</code>了。</p>
+<p>来到Spring的部分，<code>org.springframework.web.util.UrlPathHelper#getLookupPathForRequest</code>：</p>
+<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323112848.png" alt="image-20210323112848660" loading="lazy"></figure>
+<p>跟进<code>getPathWithinServletMapping</code>方法：</p>
+<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323112933.png" alt="image-20210323112933541" loading="lazy"></figure>
+<p>再跟进<code>getPathWithinApplication</code>方法，再跟进其中的<code>getRequestUri</code>：</p>
+<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113043.png" alt="image-20210323113042970" loading="lazy"></figure>
+<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113107.png" alt="image-20210323113107844" loading="lazy"></figure>
+<p>在<code>decodeAndClenUriString</code>方法中会进行URL的处理：</p>
+<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113151.png" alt="image-20210323113151080" loading="lazy"></figure>
+<p>这三个方法的具体逻辑不再赘述，之前的文章就已经分析过了，由于此时的URL中为<code>%3b</code>，是经过URL编码的<code>;</code>号，所以在<code>removeSemicolonContent</code>方法中并不会被截断，之后在<code>decodeRequestString</code>中进行URLdeocde：</p>
+<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113437.png" alt="image-20210323113437660" loading="lazy"></figure>
+<p>最后<code>getPathWithinServletMapping</code>方法的最终返回值就为<code>/admin/;auth</code>：</p>
+<figure data-type="image" tabindex="15"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113713.png" alt="image-20210323113713247" loading="lazy"></figure>
+<p>由于Map设置为<code>/admin/{name}</code>，那么此时的<code>/admin/;auth</code>就可以匹配该规则（<code>{name}</code>就为<code>;auth</code>），然后获取到对应的<code>Controller</code>，请求被Spring正常处理：</p>
+<figure data-type="image" tabindex="16"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323114050.png" alt="image-20210323114050123" loading="lazy"></figure>
+<p>这样看来，如果Spring的路由设置方式为<strong>固定路由</strong>的话（比如<code>/admin/auth</code>），则无法进行匹配，最终会返回404。</p>
 <h1 id="修复">修复</h1>
-<p>漏洞的成因在于shiro和Spring对于<code>;</code>的处理逻辑不一样：</p>
+<p>shiro层会将URL先进行decode，然后进入分号截断；Spring层会先将URL进行分号截断，之后再进行deocde，正是两者的这个差异导致的漏洞的发生。</p>
 <ul>
-<li>shiro会直接截断<code>;</code>号后面的部分</li>
-<li>Spring会截断<code>;</code>号和其后第一个<code>/</code>的部分，然后剩余部分作拼接处理</li>
+<li>
+<p>可以通过修改匹配规则，比如<code>/admin/**</code>来解决</p>
+<figure data-type="image" tabindex="17"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323134745.png" alt="image-20210323134745085" loading="lazy"></figure>
+<figure data-type="image" tabindex="18"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323134635.png" alt="image-20210323134635432" loading="lazy"></figure>
+</li>
+<li>
+<p>shiro1.6.0的解决方案是增加了一个类<code>InvalidRequestFilter</code>来对<code>;</code>号进行拦截：</p>
+<figure data-type="image" tabindex="19"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323134857.png" alt="image-20210323134857922" loading="lazy"></figure>
+<p>但是我本地使用shiro1.6.0版本测试的时候发现%3b仍然可以绕过（<strong>待解决</strong>）：</p>
+<figure data-type="image" tabindex="20"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323184115.png" alt="image-20210323184115519" loading="lazy"></figure>
+<figure data-type="image" tabindex="21"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323184139.png" alt="image-20210323184139893" loading="lazy"></figure>
+</li>
 </ul>
-<p>1.5.3版本的shiro修复如下：</p>
-<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322142711.png" alt="image-20210322142710956" loading="lazy"></figure>
-<p>shiro不再获取<code>ContextPath</code>并进行格式化处理，就无法利用<code>ContextPath</code>分号绕过了。</p>
 
         </div>
 
@@ -193,10 +213,10 @@
         <div class="flex justify-between py-8">
           
             <div class="prev-post">
-              <a href="https://f4de-bak.github.io/post/qUm02XAyG/">
+              <a href="https://f4de-bak.github.io/post/HrbS11Jsa/">
                 <h3 class="post-title">
                   <i class="ri-arrow-left-line"></i>
-                  Shiro复盘--权限绕过（四）
+                  Shiro复盘--反序列化
                 </h3>
               </a>
             </div>
@@ -204,9 +224,9 @@
 
           
             <div class="next-post">
-              <a href="https://f4de-bak.github.io/post/pHD8v5hTZ/">
+              <a href="https://f4de-bak.github.io/post/8Mpx_LGdo/">
                 <h3 class="post-title">
-                  Shiro复盘--权限绕过（二）
+                  Shiro复盘--权限绕过（三）
                   <i class="ri-arrow-right-line"></i>
                 </h3>
               </a>

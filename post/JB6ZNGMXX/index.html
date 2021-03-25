@@ -2,9 +2,9 @@
   <head>
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>F4DE的博客</title>
+<title>星海</title>
 <meta name="description" content="Keep fantasy" />
-<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616405499329">
+<link rel="shortcut icon" href="https://f4de-bak.github.io/favicon.ico?v=1616673699746">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
@@ -23,9 +23,9 @@
       <div class="flex lg:block p-4 lg:px-0 items-center fixed lg:static lg:block top-0 right-0 left-0 bg-white z-50">
         <i class="ri-menu-2-line lg:mt-4 text-2xl cursor-pointer animated fadeIn" onclick="openMenu()"></i>
         <a href="https://f4de-bak.github.io">
-          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616405499329" alt="">
+          <img class="animated fadeInLeft avatar rounded-lg mx-4 lg:mt-32 lg:mx-0 mt-0 lg:w-24 lg:h-24 w-12 w-12" src="https://f4de-bak.github.io/images/avatar.png?v=1616673699746" alt="">
         </a>
-        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">F4DE的博客</h1>
+        <h1 class="animated fadeInLeft lg:text-4xl font-extrabold lg:mt-8 mt-0 text-xl" style="animation-delay: 0.2s">星海</h1>
       </div>
       
         <div class="animated fadeInLeft" style="animation-delay: 0.4s">
@@ -104,7 +104,7 @@
 <div class="mask" onclick="closeMenu()">
 </div>
       <div class="content-wrapper py-32 lg:p-8 lg:w-3/4 post-detail animated fadeIn">
-        <h1 class="text-3xl font-bold lg:mt-16">Tomcat AJP协议漏洞复现</h1>
+        <h1 class="text-3xl font-bold lg:mt-16">Tomcat AJP协议漏洞</h1>
         <div class="text-sm text-gray-700 lg:my-8">
           2021-03-16 / 12 min read
         </div>
@@ -148,8 +148,9 @@
 <p>以下面的tomcat文件目录做对照：</p>
 <figure data-type="image" tabindex="4"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315160205.png" alt="image-20210315160205337" loading="lazy"></figure>
 <p><em>Webapps</em>目录代表一个Host，而其下的每个目录都对应着一个Context，其中ROOT目录存放着主应用，其他目录存放着子应用。当我们访问Context的时候，如果是ROOT目录下的，则可以直接通过<code>www.xxx.com/</code>来访问，而如果要访问其他子目录，则需要通过<code>www.xxx.com/docs</code>来访问。当然，主应用目录是可以修改的，默认情况下为ROOT目录。</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210324093716.png" alt="tomcat" loading="lazy"></figure>
 <p>Tomcat处理一个请求的流程大致如下：</p>
-<figure data-type="image" tabindex="5"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315145747.png" alt="image-20201013113437489" loading="lazy"></figure>
+<figure data-type="image" tabindex="6"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315145747.png" alt="image-20201013113437489" loading="lazy"></figure>
 <ol>
 <li>在获取到TCP/IP数据包的时候，会交给Processor将解析，并封装成我们熟悉的request和response对象，然后传递给下一步处理。</li>
 <li>Engine来进行Host、Context、Mapping中Servlet的匹配。</li>
@@ -158,11 +159,11 @@
 <h1 id="ajp数据包处理">AJP数据包处理</h1>
 <p>对于HTTP请求和AJP请求的数据包，在封装成request和response对象之后的流程并无差别，主要区别就是对socket流量处理和Processor解析的过程不同。</p>
 <p><code>org.apache.coyote.Processor</code>接口提供了这些功能，对于不同的协议，有不同的接口实现类。负责处理AJP请求的实现类为<code>AjpProcessor</code>：</p>
-<figure data-type="image" tabindex="6"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315161900.png" alt="image-20210315161900016" loading="lazy"></figure>
+<figure data-type="image" tabindex="7"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315161900.png" alt="image-20210315161900016" loading="lazy"></figure>
 <p>在<code>AjpProcessor</code>的<code>service()</code>方法中调用了<code>prepareRequest()</code>方法进行数据预处理：</p>
-<figure data-type="image" tabindex="7"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
+<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
 <p>而之后会调用Adapter来将请求交给Container来处理：</p>
-<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315162639.png" alt="image-20210315162639014" loading="lazy"></figure>
+<figure data-type="image" tabindex="9"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315162639.png" alt="image-20210315162639014" loading="lazy"></figure>
 <p>AJP协议中的漏洞，就出现在<code>prepareRequest()</code>方法中。</p>
 <h1 id="漏洞复现">漏洞复现</h1>
 <p>poc：https://github.com/YDHCUI/CNVD-2020-10487-Tomcat-Ajp-lfi</p>
@@ -255,55 +256,55 @@
 </li>
 <li>
 <p>在根目录里新建<code>home</code>文件夹，把<code>webapps</code>和<code>conf</code>文件夹放入<code>home</code>文件夹中：</p>
-<figure data-type="image" tabindex="9"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001210.png" alt="image-20210316001203592" loading="lazy"></figure>
+<figure data-type="image" tabindex="10"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001210.png" alt="image-20210316001203592" loading="lazy"></figure>
 </li>
 <li>
 <p>在IDEA中导入项目，选择我们新建的pom.xml文件：</p>
-<figure data-type="image" tabindex="10"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001439.png" alt="image-20210316001439225" loading="lazy"></figure>
+<figure data-type="image" tabindex="11"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001439.png" alt="image-20210316001439225" loading="lazy"></figure>
 </li>
 </ol>
-<figure data-type="image" tabindex="11"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001506.png" alt="image-20210316001506159" loading="lazy"></figure>
+<figure data-type="image" tabindex="12"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001506.png" alt="image-20210316001506159" loading="lazy"></figure>
 <ol start="5">
 <li>
 <p>导入项目之后，将<code>java</code>文件夹标记为<code>Sources Root</code>，把<code>test</code>文件夹标记为<code>Test Sources Root</code>：</p>
-<figure data-type="image" tabindex="12"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001733.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="13"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001733.png" alt="" loading="lazy"></figure>
 </li>
 <li>
 <p>把 <code>home/webapps/examples/WEB-INF/classes/trailers</code> 目录拷贝到 <code>test</code> 目录下：</p>
-<figure data-type="image" tabindex="13"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001838.png" alt="image-20210316001838650" loading="lazy"></figure>
+<figure data-type="image" tabindex="14"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001838.png" alt="image-20210316001838650" loading="lazy"></figure>
 </li>
 <li>
 <p>把 <code>home/webapps/examples/WEB-INF/classes/util/CookieFilter.java</code> 文件拷贝到 <code>test/util</code> 目录下：</p>
-<figure data-type="image" tabindex="14"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001919.png" alt="image-20210316001919101" loading="lazy"></figure>
+<figure data-type="image" tabindex="15"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001919.png" alt="image-20210316001919101" loading="lazy"></figure>
 </li>
 <li>
 <p>找到 <code>BootStrap</code>类的<code>main</code>方法，运行，这时候应该会出现下面错误：</p>
-<figure data-type="image" tabindex="15"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002035.png" alt="image-20210316002035809" loading="lazy"></figure>
+<figure data-type="image" tabindex="16"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002035.png" alt="image-20210316002035809" loading="lazy"></figure>
 </li>
 <li>
 <p>添加VM参数：<code>-Dcatalina.home={你的项目路径}\home</code>：</p>
-<figure data-type="image" tabindex="16"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002211.png" alt="image-20210316002211736" loading="lazy"></figure>
+<figure data-type="image" tabindex="17"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002211.png" alt="image-20210316002211736" loading="lazy"></figure>
 </li>
 <li>
 <p>在<code>org.apache.catalina.startup.ContextConfig</code>类中的<code>configureStart</code>方法中添加<code>context.addServletContainerInitializer(new JasperInitializer(), null);</code>，用于初始化JSP解析器：</p>
-<figure data-type="image" tabindex="17"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002433.png" alt="image-20210316002433890" loading="lazy"></figure>
+<figure data-type="image" tabindex="18"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002433.png" alt="image-20210316002433890" loading="lazy"></figure>
 </li>
 <li>
 <p>删除 <code>home/webapps/examples</code> 文件夹，然后运行 <code>main</code> 方法，访问<code>127.0.0.1:8080</code>：</p>
-<figure data-type="image" tabindex="18"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002617.png" alt="image-20210316002617780" loading="lazy"></figure>
+<figure data-type="image" tabindex="19"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002617.png" alt="image-20210316002617780" loading="lazy"></figure>
 </li>
 <li>
 <p>同时可以看到8009端口已经开放：</p>
 </li>
 </ol>
-<figure data-type="image" tabindex="19"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315144452.png" alt="image-20210315144452701" loading="lazy"></figure>
+<figure data-type="image" tabindex="20"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315144452.png" alt="image-20210315144452701" loading="lazy"></figure>
 <h2 id="文件读取">文件读取</h2>
 <p>在<code>AjpProcessor#prepareRequest</code>方法打上断点，调试启动tomcat，并使用POC来发送ajp请求：</p>
-<figure data-type="image" tabindex="20"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163242.png" alt="image-20210315163241922" loading="lazy"></figure>
+<figure data-type="image" tabindex="21"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163242.png" alt="image-20210315163241922" loading="lazy"></figure>
 <p>在699行出进行了数据包头部信息的读取，当头设置为<code>SC_A_REQ_ATTRIBUTE</code>的时候，则会读取出n和v：</p>
-<figure data-type="image" tabindex="21"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163647.png" alt="image-20210315163647369" loading="lazy"></figure>
+<figure data-type="image" tabindex="22"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163647.png" alt="image-20210315163647369" loading="lazy"></figure>
 <p>然后当n不为<code>SC_A_REQ_LOCAL_ADDR</code>、<code>SC_A_REQ_REMOTE_PORT</code>、<code>SC_A_SSL_PROTOCOL</code>的时候，会用v来对n进行赋值：</p>
-<figure data-type="image" tabindex="22"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163728.png" alt="image-20210315163728511" loading="lazy"></figure>
+<figure data-type="image" tabindex="23"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163728.png" alt="image-20210315163728511" loading="lazy"></figure>
 <p>POC中发送的数据包一共会读取三次：</p>
 <pre><code>n = javax.servlet.include.request_uri	v = /
 
@@ -312,51 +313,51 @@ n = javax.servlet.include.path_info		v = WEB-INF/web.xml
 n = javax.servlet.include.servlet_path	v = /
 </code></pre>
 <p>对应POC中的这一部分代码：</p>
-<figure data-type="image" tabindex="23"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164145.png" alt="image-20210315164145601" loading="lazy"></figure>
+<figure data-type="image" tabindex="24"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164145.png" alt="image-20210315164145601" loading="lazy"></figure>
 <p>之后进入<code>getAdapter().service()</code>方法中，这里可以看到我们请求的URL为<code>/asdf</code>：</p>
-<figure data-type="image" tabindex="24"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164452.png" alt="image-20210315164452905" loading="lazy"></figure>
+<figure data-type="image" tabindex="25"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164452.png" alt="image-20210315164452905" loading="lazy"></figure>
 <p><code>/asdf</code>这个路由是我们故意构造的一个不存在的路由，当路由无法匹配对应的servlet的时候会由<code>org.apache.catalina.servlets.DefaultServlet</code>来处理请求，是在<code>{CATALINA_HOME}/conf/web.xml</code>中默认配置的：</p>
-<figure data-type="image" tabindex="25"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164813.png" alt="image-20210315164813262" loading="lazy"></figure>
-<figure data-type="image" tabindex="26"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004730.png" alt="image-20210316004730879" loading="lazy"></figure>
+<figure data-type="image" tabindex="26"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164813.png" alt="image-20210315164813262" loading="lazy"></figure>
+<figure data-type="image" tabindex="27"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004730.png" alt="image-20210316004730879" loading="lazy"></figure>
 <p>在<code>DefaultServlet</code>的<code>service()</code>方法中打下断点，当我们请求方式为<code>GET</code>方式的时候，存在<code>service()-&gt;doGet()-&gt;serveResource()</code>的调用链：</p>
-<figure data-type="image" tabindex="27"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003333.png" alt="image-20210316003333899" loading="lazy"></figure>
+<figure data-type="image" tabindex="28"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003333.png" alt="image-20210316003333899" loading="lazy"></figure>
 <p>再贴一个调用栈：</p>
-<figure data-type="image" tabindex="28"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003409.png" alt="image-20210316003409095" loading="lazy"></figure>
+<figure data-type="image" tabindex="29"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003409.png" alt="image-20210316003409095" loading="lazy"></figure>
 <p>在<code>serveResource()</code>中调用了<code>getRelativePath()</code>方法：</p>
-<figure data-type="image" tabindex="29"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003649.png" alt="image-20210316003649513" loading="lazy"></figure>
+<figure data-type="image" tabindex="30"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003649.png" alt="image-20210316003649513" loading="lazy"></figure>
 <p>在这个方法中会读取出我们POC中构造的恶意属性，然后把两个属性拼接成一个path：</p>
-<figure data-type="image" tabindex="30"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003825.png" alt="image-20210316003824993" loading="lazy"></figure>
+<figure data-type="image" tabindex="31"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003825.png" alt="image-20210316003824993" loading="lazy"></figure>
 <p>然后在<code>serveResource()</code>方法中会把这个path传入<code>resources.getResource()</code>方法中造成任意文件读取：</p>
-<figure data-type="image" tabindex="31"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003942.png" alt="image-20210316003942820" loading="lazy"></figure>
+<figure data-type="image" tabindex="32"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003942.png" alt="image-20210316003942820" loading="lazy"></figure>
 <p>之后会把根据path获取到文件资源序列化输出，这样客户端再根据AJP协议的数据包进行解包，就能读取到文件内容了：</p>
-<figure data-type="image" tabindex="32"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004240.png" alt="image-20210316004240365" loading="lazy"></figure>
+<figure data-type="image" tabindex="33"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004240.png" alt="image-20210316004240365" loading="lazy"></figure>
 <h2 id="jsp文件包含">JSP文件包含</h2>
 <p>Tomcat会将以<code>.jsp、.jspx</code>结尾的url交给<code>org.apache.jasper.servlet.JspServlet</code>来处理：</p>
-<figure data-type="image" tabindex="33"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010505.png" alt="image-20210316010505803" loading="lazy"></figure>
-<figure data-type="image" tabindex="34"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010516.png" alt="image-20210316010516564" loading="lazy"></figure>
+<figure data-type="image" tabindex="34"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010505.png" alt="image-20210316010505803" loading="lazy"></figure>
+<figure data-type="image" tabindex="35"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010516.png" alt="image-20210316010516564" loading="lazy"></figure>
 <p>所以我们可以修改POC中的请求路径：</p>
-<figure data-type="image" tabindex="35"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316011052.png" alt="image-20210316011052683" loading="lazy"></figure>
+<figure data-type="image" tabindex="36"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316011052.png" alt="image-20210316011052683" loading="lazy"></figure>
 <p>然后再<code>JspServlet#service</code>方法中打下断点：</p>
-<figure data-type="image" tabindex="36"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012336.png" alt="image-20210316012336568" loading="lazy"></figure>
+<figure data-type="image" tabindex="37"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012336.png" alt="image-20210316012336568" loading="lazy"></figure>
 <p>这里同样会获取<code>INCLUDE_SERVLET_PATH</code>和<code>INCLUDE_PATH_INFO</code>两个属性，而这两个属性是可通过构造AJP请求数据包来控制的，这两个属性拼接到<code>jspUri</code>之后，会进入到<code>serviceJsp</code>方法：</p>
-<figure data-type="image" tabindex="37"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012711.png" alt="image-20210316012711652" loading="lazy"></figure>
+<figure data-type="image" tabindex="38"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012711.png" alt="image-20210316012711652" loading="lazy"></figure>
 <p>这个方法会把<code>jspUri</code>（上述为<code>/WEB-INF/testfile</code>）所表示的文件解析为JSP文件，从而形成文件包含：</p>
-<figure data-type="image" tabindex="38"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316013019.png" alt="image-20210316013019379" loading="lazy"></figure>
+<figure data-type="image" tabindex="39"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316013019.png" alt="image-20210316013019379" loading="lazy"></figure>
 <p>值得注意的是，这个所包含的文件和我们请求的url（<code>/asdf/f4de.jsp</code>）是没有关系的。</p>
 <h1 id="其他">其他</h1>
 <h2 id="读取其他context">读取其他Context</h2>
 <p>默认情况下是读取的主目录（ROOT目录）中的文件内容，此外还可以读取其他Context中文件的内容，只需要修改一下请求的url即可（文件包含同理）：</p>
-<figure data-type="image" tabindex="39"><img src="https://i.loli.net/2021/03/16/4zv5V8bDfcwEPTL.png" alt="image-20210316102141936" loading="lazy"></figure>
-<figure data-type="image" tabindex="40"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104937.png" alt="image-20210316102213823" loading="lazy"></figure>
+<figure data-type="image" tabindex="40"><img src="https://i.loli.net/2021/03/16/4zv5V8bDfcwEPTL.png" alt="image-20210316102141936" loading="lazy"></figure>
+<figure data-type="image" tabindex="41"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104937.png" alt="image-20210316102213823" loading="lazy"></figure>
 <h2 id="目录穿越可读性">目录穿越可读性</h2>
 <p>我们尝试穿越出webapps这个目录，读取其他文件夹中的内容：</p>
 <p><code>DefaultServlet#serveResource</code>打下断点，在<code>resources.getResource</code>方法中：</p>
-<figure data-type="image" tabindex="41"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104946.png" alt="image-20210316103039869" loading="lazy"></figure>
-<figure data-type="image" tabindex="42"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105005.png" alt="image-20210316103129512" loading="lazy"></figure>
+<figure data-type="image" tabindex="42"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104946.png" alt="image-20210316103039869" loading="lazy"></figure>
+<figure data-type="image" tabindex="43"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105005.png" alt="image-20210316103129512" loading="lazy"></figure>
 <p>跟进<code>RequestUtil.normalize</code>：</p>
-<figure data-type="image" tabindex="43"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105018.png" alt="image-20210316103339267" loading="lazy"></figure>
+<figure data-type="image" tabindex="44"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105018.png" alt="image-20210316103339267" loading="lazy"></figure>
 <p>只要包含<code>/../</code>，就会返回<code>null</code>，直接抛出异常：</p>
-<figure data-type="image" tabindex="44"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105027.png" alt="image-20210316103512792" loading="lazy"></figure>
+<figure data-type="image" tabindex="45"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105027.png" alt="image-20210316103512792" loading="lazy"></figure>
 <h1 id="修复">修复</h1>
 <ul>
 <li>

